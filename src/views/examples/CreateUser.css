@@ -1,0 +1,8 @@
+.avatar-action-btn {
+  transition: transform 0.18s cubic-bezier(0.4,0,0.2,1), box-shadow 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+.avatar-action-btn:hover, .avatar-action-btn:focus {
+  transform: scale(1.12);
+  box-shadow: 0 4px 16px rgba(50,76,221,0.18), 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 2;
+} 

@@ -15,7 +15,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 // reactstrap components
 import {
   DropdownMenu,
@@ -35,9 +35,11 @@ import {
 } from "reactstrap";
 
 const AdminNavbar = (props) => {
+  const location = useLocation();
+  const isUserManagement = location.pathname === "/admin/user-management";
   return (
     <>
-      <Navbar className="navbar-top navbar-dark" expand="md" id="navbar-main">
+      <Navbar className={`navbar-top navbar-dark${isUserManagement ? " bg-user-management" : ""}`} expand="md" id="navbar-main">
         <Container fluid>
           <Link
             className="h4 mb-0 text-white text-uppercase d-none d-lg-inline-block"

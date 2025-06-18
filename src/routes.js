@@ -22,9 +22,12 @@ import Register from "views/examples/Register.js";
 import Login from "views/examples/Login.js";
 import Tables from "views/examples/Tables.js";
 import Icons from "views/examples/Icons.js";
+import UserManagement from "views/examples/UserManagement.js";
 import ForgotPassword from "views/examples/ForgotPassword.js";
 import QRLogin from "views/examples/QRLogin.js";
 import QRRegister from "views/examples/QRRegister.js";
+import CreateUser from "views/examples/CreateUser.js";
+import EditUser from "views/examples/EditUser.js";
 
 var routes = [
   {
@@ -35,10 +38,10 @@ var routes = [
     layout: "/admin",
   },
   {
-    path: "/icons",
-    name: "Icons",
-    icon: "ni ni-planet text-blue",
-    component: <Icons />,
+    path: "/user-management",
+    name: "User Management",
+    icon: "ni ni-settings-gear-65 text-blue",
+    component: <UserManagement />,
     layout: "/admin",
   },
   {
@@ -103,6 +106,20 @@ var routes = [
     icon: "ni ni-camera-compact text-info",
     component: <QRRegister />,
     layout: "/auth",
+  },
+  {
+    path: "/create-user",
+    name: "Create User",
+    icon: "ni ni-fat-add text-primary",
+    component: <CreateUser />,
+    layout: "/admin",
+  },
+  {
+    path: "/edit-user/:id",
+    name: "Edit User",
+    icon: "ni ni-single-02 text-primary",
+    component: <EditUser />,
+    layout: "/admin",
   },
 ];
 export default routes;

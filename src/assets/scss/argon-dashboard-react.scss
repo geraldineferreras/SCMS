@@ -80,3 +80,14 @@
 
 // React Differences
 @import "react/react-differences";
+
+// Custom checkbox: checked box uses theme color, checkmark is white and centered
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+  background-color: #5e72e4;
+  border-color: #5e72e4;
+}
+
+// Center the white checkmark inside the box
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label::after {
+  display: none;
+}
