@@ -59,14 +59,14 @@ const Login = () => {
 
   return (
     <>
-      <Col lg="5" md="7">
+      <Col lg="4" md="6" sm="8" xs="10">
         <Card className="bg-secondary shadow border-0">
           <CardHeader className="pb-2 border-0">
             <div className="text-center">
-              <h1 className="display-4 text-dark mb-0" style={{ fontWeight: 700, fontSize: '2.5rem' }}>Login</h1>
+              <h1 className="display-5 text-dark mb-0" style={{ fontWeight: 700, fontSize: '1.8rem' }}>Login</h1>
             </div>
           </CardHeader>
-          <CardBody className="px-lg-5 py-lg-5">
+          <CardBody className="px-lg-4 py-lg-4 px-3 py-3">
             <Form role="form" onSubmit={handleLogin}>
               <FormGroup className="mb-3">
                 <InputGroup className="input-group-alternative">
@@ -81,10 +81,11 @@ const Login = () => {
                     autoComplete="new-email"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
+                    style={{ fontSize: '0.9rem' }}
                   />
                 </InputGroup>
               </FormGroup>
-              <FormGroup>
+              <FormGroup className="mb-3">
                 <InputGroup className="input-group-alternative">
                   <InputGroupAddon addonType="prepend">
                     <InputGroupText>
@@ -97,11 +98,12 @@ const Login = () => {
                     autoComplete="new-password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
+                    style={{ fontSize: '0.9rem' }}
                   />
                 </InputGroup>
               </FormGroup>
-              {error && <div className="text-danger text-center mb-3">{error}</div>}
-              <div className="custom-control custom-control-alternative custom-checkbox">
+              {error && <div className="text-danger text-center mb-3" style={{ fontSize: '0.8rem' }}>{error}</div>}
+              <div className="custom-control custom-control-alternative custom-checkbox mb-3">
                 <input
                   className="custom-control-input"
                   id="customCheckLogin"
@@ -112,6 +114,7 @@ const Login = () => {
                 <label
                   className="custom-control-label"
                   htmlFor="customCheckLogin"
+                  style={{ fontSize: '0.85rem' }}
                 >
                   <span className="text-muted">Remember me</span>
                 </label>
@@ -119,16 +122,17 @@ const Login = () => {
               <Button className="my-4 w-100" color="primary" type="submit">
                 Sign in
               </Button>
-              <hr style={{ border: 'none', height: '1px', background: '#e9ecef', margin: '2rem 0 1rem 0' }} />
+              <hr style={{ border: 'none', height: '1px', background: '#e9ecef', margin: '1.5rem 0 1rem 0' }} />
               <div className="text-center text-muted mb-2">
-                <small>Or sign in with</small>
+                <small style={{ fontSize: '0.75rem' }}>Or sign in with</small>
               </div>
               <div className="btn-wrapper text-center">
                 <Button
-                  className="btn-neutral btn-icon"
+                  className="btn-neutral btn-icon mr-1"
                   color="default"
                   href="#pablo"
                   onClick={(e) => e.preventDefault()}
+                  style={{ fontSize: '0.8rem' }}
                 >
                   <span className="btn-inner--icon">
                     <img
@@ -137,15 +141,17 @@ const Login = () => {
                         require("../../assets/img/icons/common/github.svg")
                           .default
                       }
+                      style={{ width: '16px', height: '16px' }}
                     />
                   </span>
                   <span className="btn-inner--text">Github</span>
                 </Button>
                 <Button
-                  className="btn-neutral btn-icon"
+                  className="btn-neutral btn-icon ml-1"
                   color="default"
                   href="#pablo"
                   onClick={(e) => e.preventDefault()}
+                  style={{ fontSize: '0.8rem' }}
                 >
                   <span className="btn-inner--icon">
                     <img
@@ -154,6 +160,7 @@ const Login = () => {
                         require("../../assets/img/icons/common/google.svg")
                           .default
                       }
+                      style={{ width: '16px', height: '16px' }}
                     />
                   </span>
                   <span className="btn-inner--text">Google</span>
@@ -168,7 +175,7 @@ const Login = () => {
               className="text-light"
               to="/auth/forgot-password"
             >
-              <small>Forgot password?</small>
+              <small style={{ fontSize: '0.75rem' }}>Forgot password?</small>
             </Link>
           </Col>
           <Col className="text-right" xs="6">
@@ -176,7 +183,7 @@ const Login = () => {
               className="text-light"
               to="/auth/register"
             >
-              <small>Create new account</small>
+              <small style={{ fontSize: '0.75rem' }}>Create new account</small>
             </Link>
           </Col>
         </Row>

@@ -20,37 +20,41 @@ import Header from "components/Headers/Header.js";
 import { useNavigate } from "react-router-dom";
 // reactstrap components
 import {
-  Card,
-  CardHeader,
-  CardBody,
-  Container,
-  Row,
-  Col,
-  Table,
-  Button,
   Badge,
+  Button,
+  Card,
+  CardBody,
+  Col,
+  Container,
   Input,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
-  Dropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
-  Nav,
-  NavItem,
-  NavLink,
-  TabContent,
-  TabPane,
-  Pagination,
-  PaginationItem,
-  PaginationLink,
   Modal,
   ModalBody,
   ModalFooter,
+  ModalHeader,
+  Nav,
+  NavItem,
+  NavLink,
+  Pagination,
+  PaginationItem,
+  PaginationLink,
+  Row,
+  Table,
+  TabContent,
+  TabPane,
+  UncontrolledDropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  UncontrolledTooltip,
 } from "reactstrap";
 import classnames from "classnames";
 import userDefault from "../../assets/img/theme/user-default.svg";
+
+const defaultCoverPhotoSvg =
+  "data:image/svg+xml;utf8,<svg width='600' height='240' viewBox='0 0 600 240' fill='none' xmlns='http://www.w3.org/2000/svg'><rect width='600' height='240' fill='%23f7f7f7'/><path d='M0 180 Q150 120 300 180 T600 180 V240 H0 Z' fill='%23e3eafc'/><path d='M0 200 Q200 140 400 200 T600 200 V240 H0 Z' fill='%23cfd8dc' opacity='0.7'/></svg>";
 
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,6 +69,12 @@ const UserManagement = () => {
   const [localUsers, setLocalUsers] = useState([]);
   const [deleteUserId, setDeleteUserId] = useState(null);
   const [deleteUserName, setDeleteUserName] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
+  const [viewMode, setViewMode] = useState("table"); // "table" or "block"
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null); // { src: string, type: 'cover' | 'avatar' }
 
   // Check screen size on mount and resize
   useEffect(() => {
@@ -83,12 +93,21 @@ const UserManagement = () => {
     setLocalUsers(stored);
   }, []);
 
+  // On mount, check for tab and view query params and set state accordingly
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    const view = params.get('view');
+    if (tab && (tab === 'admin' || tab === 'teacher' || tab === 'student')) setActiveTab(tab);
+    if (view && (view === 'table' || view === 'block')) setViewMode(view);
+  }, []);
+
   // Sample user data
   const users = [
     // Admin users
-    { id: 1, name: "John Admin", email: "john.admin@school.com", role: "admin", status: "active", department: "Administration", lastLogin: "2024-01-15" },
-    { id: 2, name: "Sarah Manager", email: "sarah.manager@school.com", role: "admin", status: "active", department: "Administration", lastLogin: "2024-01-14" },
-    { id: 3, name: "Mike Director", email: "mike.director@school.com", role: "admin", status: "inactive", department: "Administration", lastLogin: "2024-01-10" },
+    { id: 1, name: "Dr. Sarah Johnson", email: "sarah.johnson@school.com", role: "admin", status: "active", department: "Administration", lastLogin: "2024-01-15" },
+    { id: 2, name: "Mr. David Smith", email: "david.smith@school.com", role: "admin", status: "active", department: "Administration", lastLogin: "2024-01-14" },
+    { id: 3, name: "Ms. Lisa Brown", email: "lisa.brown@school.com", role: "admin", status: "inactive", department: "Administration", lastLogin: "2024-01-05" },
     
     // Teacher users
     { id: 4, name: "Dr. Emily Johnson", email: "emily.johnson@school.com", role: "teacher", status: "active", department: "Mathematics", lastLogin: "2024-01-15" },
@@ -187,13 +206,32 @@ const UserManagement = () => {
   };
 
   const getRoleBadge = (role) => {
-    const colors = {
-      admin: "danger",
-      teacher: "warning",
-      student: "info"
-    };
+    switch (role) {
+      case "admin":
+        return <Badge color="danger" className="badge-dot mr-2">Admin</Badge>;
+      case "teacher":
+        return <Badge color="warning" className="badge-dot mr-2">Teacher</Badge>;
+      case "student":
+        return <Badge color="info" className="badge-dot mr-2">Student</Badge>;
+      default:
+        return <Badge color="secondary" className="badge-dot mr-2">Unknown</Badge>;
+    }
+  };
+
+  const getRoleBadgeForBlock = (role) => {
     return (
-      <Badge color={colors[role]}>
+      <Badge 
+        color="dark" 
+        className="badge-dot mr-2"
+        style={{
+          backgroundColor: '#172b4d',
+          color: '#fff',
+          padding: '0.25rem 0.5rem',
+          borderRadius: '0.375rem',
+          fontSize: '0.7rem',
+          fontWeight: '600'
+        }}
+      >
         {role.charAt(0).toUpperCase() + role.slice(1)}
       </Badge>
     );
@@ -245,12 +283,107 @@ const UserManagement = () => {
     setDeleteUserName("");
   };
 
-  const confirmDeleteUser = () => {
+  const confirmDeleteUser = async () => {
+    setIsDeleting(true);
+    
+    // Simulate loading time
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
     let users = JSON.parse(localStorage.getItem('scms_users') || '[]');
     users = users.filter(u => String(u.id) !== String(deleteUserId));
     localStorage.setItem('scms_users', JSON.stringify(users));
     setLocalUsers(users);
-    cancelDeleteUser();
+    
+    setIsDeleting(false);
+    setShowDeleteSuccess(true);
+    
+    // Hide success message after 3 seconds and close modal
+    setTimeout(() => {
+      setShowDeleteSuccess(false);
+      cancelDeleteUser();
+      // Restore tab and view mode after delete
+      const params = new URLSearchParams({ tab: activeTab, view: viewMode });
+      window.history.replaceState(null, '', `/admin/user-management?${params.toString()}`);
+    }, 3000);
+  };
+
+  // Generate random avatar for real people
+  const getRandomAvatar = (userId) => {
+    const avatarUrls = [
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1552058544-f2b08422138a?w=150&h=150&fit=crop&crop=face"
+    ];
+    
+    // Use userId to consistently get the same avatar for the same user
+    const index = Math.abs(userId.toString().split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % avatarUrls.length;
+    return avatarUrls[index];
+  };
+
+  const getAvatarForUser = (user) => {
+    // If user has a custom profile image, use it
+    if (user.profileImageUrl && user.profileImageUrl !== userDefault) {
+      return user.profileImageUrl;
+    }
+    
+    // Assign random avatars to specific users based on role
+    if (user.role === 'admin') {
+      // First 2 admins get random avatars
+      const adminUsers = [...users, ...localUsers].filter(u => u.role === 'admin').sort((a, b) => a.id - b.id);
+      const adminIndex = adminUsers.findIndex(u => u.id === user.id);
+      if (adminIndex < 2) {
+        return getRandomAvatar(user.id);
+      }
+    } else if (user.role === 'teacher') {
+      // First 9 teachers get random avatars
+      const teacherUsers = [...users, ...localUsers].filter(u => u.role === 'teacher').sort((a, b) => a.id - b.id);
+      const teacherIndex = teacherUsers.findIndex(u => u.id === user.id);
+      if (teacherIndex < 9) {
+        return getRandomAvatar(user.id);
+      }
+    } else if (user.role === 'student') {
+      // First 15 students get random avatars
+      const studentUsers = [...users, ...localUsers].filter(u => u.role === 'student').sort((a, b) => a.id - b.id);
+      const studentIndex = studentUsers.findIndex(u => u.id === user.id);
+      if (studentIndex < 15) {
+        return getRandomAvatar(user.id);
+      }
+    }
+    
+    // For all other users, use default avatar
+    return userDefault;
+  };
+
+  const handleUserRowClick = (user) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
+  };
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setSelectedUser(null);
+    // Update URL to preserve tab and view
+    const params = new URLSearchParams({ tab: activeTab, view: viewMode });
+    window.history.replaceState(null, '', `/admin/user-management?${params.toString()}`);
+  };
+
+  // Helper to abbreviate course names
+  const getCourseAbbreviation = (course) => {
+    if (!course) return '';
+    const map = {
+      'Bachelor of Science in Information Technology': 'BSIT',
+      'Bachelor of Science in Information Systems': 'BSIS',
+      'Bachelor of Science in Computer Science': 'BSCS',
+      'Associate in Computer Technology': 'ACT',
+      // Add more mappings as needed
+    };
+    return map[course] || course;
   };
 
   const renderUserTable = (users, title, color) => {
@@ -266,69 +399,288 @@ const UserManagement = () => {
             <tr>
               <th scope="col">Name</th>
               <th scope="col">Email</th>
-              <th scope="col">Department</th>
+              <th scope="col">Course/Year/Section</th>
               <th scope="col">Status</th>
               <th scope="col">Last Login</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {getPaginatedUsers(users).map((user) => (
-              <tr key={user.id}>
-                <td>
-                  <div className="d-flex align-items-center">
+            {getPaginatedUsers(users).map((user) => {
+              let courseYearSection = user.department;
+              if (user.role === 'student') {
+                const course = getCourseAbbreviation(user.department);
+                const year = user.year ? user.year : '';
+                const section = user.section ? user.section : '';
+                courseYearSection = [course, year, section].filter(Boolean).join(' ').replace(/  +/g, ' ');
+              }
+              return (
+                <tr key={user.id} style={{ cursor: 'pointer' }} onClick={e => {
+                  if (e.target.closest('button')) return;
+                  handleUserRowClick(user);
+                }}>
+                  <td>
+                    <div className="d-flex align-items-center">
+                      <div
+                        className="avatar avatar-sm rounded-circle bg-gradient-primary mr-3"
+                        style={{
+                          width: 40,
+                          height: 40,
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: getAvatarForUser(user) !== userDefault ? 'transparent' : '#f8f9fa',
+                          border: getAvatarForUser(user) !== userDefault ? undefined : '1px solid #e9ecef'
+                        }}
+                      >
+                        <img 
+                          src={getAvatarForUser(user)} 
+                          alt={user.name} 
+                          style={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            objectFit: 'cover',
+                            backgroundColor: getAvatarForUser(user) === userDefault ? '#fff' : 'transparent'
+                          }} 
+                        />
+                      </div>
+                      <div>
+                        <span className="font-weight-bold">{user.name}</span>
+                        <br />
+                        <small className="text-muted">ID: {user.id}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{user.email}</td>
+                  <td>{courseYearSection}</td>
+                  <td>{getStatusBadge(user.status)}</td>
+                  <td>{user.lastLogin}</td>
+                  <td onClick={e => e.stopPropagation()}>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      className="mr-2"
+                      onClick={() => navigate(`/admin/edit-user/${user.id}?tab=${activeTab}&view=${viewMode}`)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      color="danger"
+                      size="sm"
+                      onClick={() => handleDeleteUser(user.id, user.name)}
+                      disabled={!getAvatarForUser(user) && !localUsers.find(u => String(u.id) === String(user.id))}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+        
+        {/* Pagination */}
+        <div className="d-flex flex-row justify-content-between align-items-center w-100 mt-3 px-4">
+          <div className="d-flex flex-row align-items-center">
+            <span className="mr-2 text-muted small">Show</span>
+            <Input
+              type="select"
+              value={itemsPerPage}
+              onChange={e => handleItemsPerPageChange(parseInt(e.target.value))}
+              style={{ width: '80px', fontSize: '0.95rem', marginRight: '8px' }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </Input>
+            <span className="text-muted small" style={{ whiteSpace: 'nowrap' }}>
+              of {totalItems} entries
+            </span>
+          </div>
+          <Pagination size="sm" className="mb-0 justify-content-center">
+            <PaginationItem disabled={currentPage === 1}>
+              <PaginationLink
+                previous
+                onClick={() => handlePageChange(currentPage - 1)}
+                style={{ cursor: currentPage === 1 ? 'default' : 'pointer' }}
+              />
+            </PaginationItem>
+            
+            {/* Mobile-friendly page numbers - show fewer elements on small screens */}
+            {currentPage > 2 && !isMobile && (
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => handlePageChange(1)}
+                  style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                >
+                  1
+                </PaginationLink>
+              </PaginationItem>
+            )}
+            
+            {currentPage > 3 && !isMobile && (
+              <PaginationItem disabled>
+                <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>...</PaginationLink>
+              </PaginationItem>
+            )}
+            
+            {currentPage > 1 && (
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                >
+                  {currentPage - 1}
+                </PaginationLink>
+              </PaginationItem>
+            )}
+            
+            <PaginationItem active>
+              <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>
+                {currentPage}
+              </PaginationLink>
+            </PaginationItem>
+            
+            {currentPage < totalPages && (
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                >
+                  {currentPage + 1}
+                </PaginationLink>
+              </PaginationItem>
+            )}
+            
+            {currentPage < totalPages - 2 && !isMobile && (
+              <PaginationItem disabled>
+                <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>...</PaginationLink>
+              </PaginationItem>
+            )}
+            
+            {currentPage < totalPages - 1 && !isMobile && (
+              <PaginationItem>
+                <PaginationLink
+                  onClick={() => handlePageChange(totalPages)}
+                  style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                >
+                  {totalPages}
+                </PaginationLink>
+              </PaginationItem>
+            )}
+            
+            <PaginationItem disabled={currentPage === totalPages}>
+              <PaginationLink
+                next
+                onClick={() => handlePageChange(currentPage + 1)}
+                style={{ cursor: currentPage === totalPages ? 'default' : 'pointer' }}
+              />
+            </PaginationItem>
+          </Pagination>
+        </div>
+      </div>
+    );
+  };
+
+  const renderUserBlocks = (users, title, color) => {
+    if (users.length === 0) return null;
+    
+    const { totalItems, totalPages, startItem, endItem } = getPaginationInfo();
+    
+    return (
+      <div className="mb-4">
+        <h3 className="text-dark mb-3 pl-4">{title} ({users.length})</h3>
+        <Row>
+          {getPaginatedUsers(users).map((user) => (
+            <Col key={user.id} lg="4" md="6" sm="12" className="mb-3">
+              <Card className="shadow-sm position-relative">
+                <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 2 }} onClick={e => e.stopPropagation()}>
+                  <UncontrolledDropdown>
+                    <DropdownToggle
+                      color="link"
+                      size="sm"
+                      className="text-muted p-0 user-block-menu-toggle"
+                      style={{ border: 'none', background: 'transparent', fontSize: '1.15rem', lineHeight: 1, borderRadius: '50%', transition: 'background 0.15s' }}
+                      aria-label="Actions"
+                    >
+                      <i className="fa fa-ellipsis-h" />
+                    </DropdownToggle>
+                    <DropdownMenu right>
+                      <DropdownItem
+                        onClick={() => navigate(`/admin/edit-user/${user.id}?tab=${activeTab}&view=${viewMode}`)}
+                        className="d-flex align-items-center"
+                      >
+                        <i className="ni ni-settings-gear-65 mr-2"></i>
+                        Edit User
+                      </DropdownItem>
+                      <DropdownItem
+                        onClick={() => handleDeleteUser(user.id, user.name)}
+                        disabled={!getAvatarForUser(user) && !localUsers.find(u => String(u.id) === String(user.id))}
+                        className="d-flex align-items-center text-danger"
+                      >
+                        <i className="fa fa-trash mr-2"></i>
+                        Delete User
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </UncontrolledDropdown>
+                </div>
+                <CardBody className="p-3" style={{ cursor: 'pointer' }} onClick={() => handleUserRowClick(user)}>
+                  <div className="d-flex align-items-center mb-3">
                     <div
                       className="avatar avatar-sm rounded-circle bg-gradient-primary mr-3"
                       style={{
-                        width: 40,
-                        height: 40,
+                        width: 50,
+                        height: 50,
                         overflow: 'hidden',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: user.profileImageUrl ? 'transparent' : '#fff',
-                        border: user.profileImageUrl ? undefined : '1px solid #e9ecef'
+                        background: getAvatarForUser(user) !== userDefault ? 'transparent' : '#f8f9fa',
+                        border: getAvatarForUser(user) !== userDefault ? undefined : '1px solid #e9ecef'
                       }}
                     >
-                      {user.profileImageUrl ? (
-                        <img src={user.profileImageUrl} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <img src={userDefault} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#fff' }} />
-                      )}
+                      <img 
+                        src={getAvatarForUser(user)} 
+                        alt={user.name} 
+                        style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          objectFit: 'cover',
+                          backgroundColor: getAvatarForUser(user) === userDefault ? '#fff' : 'transparent'
+                        }} 
+                      />
                     </div>
-                    <div>
-                      <span className="font-weight-bold">{user.name}</span>
-                      <br />
+                    <div className="flex-grow-1">
+                      <h6 className="mb-0 font-weight-bold">{user.name}</h6>
                       <small className="text-muted">ID: {user.id}</small>
                     </div>
                   </div>
-                </td>
-                <td>{user.email}</td>
-                <td>{user.department}</td>
-                <td>{getStatusBadge(user.status)}</td>
-                <td>{user.lastLogin}</td>
-                <td>
-                  <Button
-                    color="primary"
-                    size="sm"
-                    className="mr-2"
-                    onClick={() => navigate(`/admin/edit-user/${user.id}`)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    color="danger"
-                    size="sm"
-                    onClick={() => handleDeleteUser(user.id, user.name)}
-                    disabled={!user.profileImageUrl && !localUsers.find(u => String(u.id) === String(user.id))}
-                  >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+                  
+                  <div className="mb-2">
+                    <small className="text-muted d-block">
+                      <i className="ni ni-email-83 mr-1"></i>
+                      {user.email}
+                    </small>
+                    <small className="text-muted d-block">
+                      <i className="ni ni-badge mr-1"></i>
+                      {user.department || 'N/A'}
+                    </small>
+                    <small className="text-muted d-block">
+                      <i className="ni ni-calendar-grid-58 mr-1"></i>
+                      Last Login: {user.lastLogin}
+                    </small>
+                  </div>
+                  
+                  <div className="d-flex align-items-center">
+                    {getStatusBadge(user.status)}
+                  </div>
+                </CardBody>
+              </Card>
+            </Col>
+          ))}
+        </Row>
         
         {/* Pagination */}
         <div className="d-flex flex-row justify-content-between align-items-center w-100 mt-3 px-4">
@@ -487,6 +839,35 @@ const UserManagement = () => {
                 </Col>
               </Row>
 
+              {/* View Mode Tabs */}
+              <Row className="mb-3">
+                <Col xs="12">
+                  <div className="d-flex justify-content-end">
+                    <div className="btn-group" role="group" style={{ marginRight: '1rem' }}>
+                      <Button
+                        color={viewMode === "table" ? "primary" : "secondary"}
+                        outline={viewMode !== "table"}
+                        size="sm"
+                        onClick={() => setViewMode("table")}
+                        className="mr-1"
+                      >
+                        <i className="ni ni-chart-bar-32 mr-1"></i>
+                        Table View
+                      </Button>
+                      <Button
+                        color={viewMode === "block" ? "primary" : "secondary"}
+                        outline={viewMode !== "block"}
+                        size="sm"
+                        onClick={() => setViewMode("block")}
+                      >
+                        <i className="ni ni-app mr-1"></i>
+                        Block View
+                      </Button>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+
               {/* Search and Show Entries Row */}
               <Row className="mb-4">
                 <Col md="4" className="pl-4">
@@ -532,7 +913,7 @@ const UserManagement = () => {
                     <i className="ni ni-chart-bar-32 mr-2"></i>
                     Export
                   </Button>
-                  <Button color="primary" onClick={() => navigate("/admin/create-user")}>
+                  <Button color="primary" onClick={() => navigate(`/admin/create-user?tab=${activeTab}&view=${viewMode}`)}>
                     <i className="ni ni-fat-add mr-2"></i>
                     Add New User
                   </Button>
@@ -542,13 +923,13 @@ const UserManagement = () => {
               {/* Tabbed User Tables */}
               <TabContent activeTab={activeTab}>
                 <TabPane tabId="admin">
-                  {renderUserTable(adminUsers, "Administrators", "danger")}
+                  {viewMode === "table" ? renderUserTable(adminUsers, "Administrators", "danger") : renderUserBlocks(adminUsers, "Administrators", "danger")}
                 </TabPane>
                 <TabPane tabId="teacher">
-                  {renderUserTable(teacherUsers, "Teachers", "warning")}
+                  {viewMode === "table" ? renderUserTable(teacherUsers, "Teachers", "warning") : renderUserBlocks(teacherUsers, "Teachers", "warning")}
                 </TabPane>
                 <TabPane tabId="student">
-                  {renderUserTable(studentUsers, "Students", "info")}
+                  {viewMode === "table" ? renderUserTable(studentUsers, "Students", "info") : renderUserBlocks(studentUsers, "Students", "info")}
                 </TabPane>
               </TabContent>
             </Card>
@@ -557,13 +938,204 @@ const UserManagement = () => {
       </Container>
       <Modal isOpen={!!deleteUserId} toggle={cancelDeleteUser} centered backdrop>
         <ModalBody className="text-center">
-          <h5>Are you sure you want to delete <span className="text-danger">{deleteUserName}</span>?</h5>
-          <div className="mt-4 d-flex justify-content-center">
-            <Button color="secondary" onClick={cancelDeleteUser} className="mr-2">Cancel</Button>
-            <Button color="danger" onClick={confirmDeleteUser}>Delete</Button>
-          </div>
+          {!isDeleting && !showDeleteSuccess ? (
+            <>
+              <div className="mb-3">
+                <div className="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '4rem', height: '4rem' }}>
+                  <i className="fa fa-trash text-white" style={{ fontSize: '2rem' }}></i>
+                </div>
+              </div>
+              <h5>Are you sure you want to delete <span className="text-danger">{deleteUserName}</span>?</h5>
+              <div className="mt-4 d-flex justify-content-center">
+                <Button color="secondary" onClick={cancelDeleteUser} className="mr-2">Cancel</Button>
+                <Button color="danger" onClick={confirmDeleteUser}>Delete</Button>
+              </div>
+            </>
+          ) : isDeleting ? (
+            <>
+              <div className="mb-3">
+                <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                  <span className="sr-only">Loading...</span>
+                </div>
+              </div>
+              <h5>Deleting User...</h5>
+              <p className="text-muted mb-0">Please wait while we process your request.</p>
+            </>
+          ) : (
+            <>
+              <div className="mb-3">
+                <div className="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '4rem', height: '4rem' }}>
+                  <i className="ni ni-check-bold text-white" style={{ fontSize: '2rem' }}></i>
+                </div>
+              </div>
+              <h5>User <span className="text-success">{deleteUserName}</span> has been deleted successfully!</h5>
+            </>
+          )}
         </ModalBody>
       </Modal>
+      <Modal isOpen={showUserModal} toggle={closeUserModal} centered size="md" className="user-details-modal">
+        <ModalHeader className="pb-0">
+          <button className="modal-close-btn" onClick={closeUserModal}>
+            <i className="ni ni-fat-remove" />
+          </button>
+        </ModalHeader>
+        <ModalBody className="p-0">
+          {selectedUser && (
+            <div>
+              <div className="cover-photo-container mb-4">
+                <div className={`cover-photo-img-wrapper has-image`}>
+                  <img
+                    alt="Cover Preview"
+                    src={selectedUser.coverPhotoUrl || defaultCoverPhotoSvg}
+                    className="cover-photo-img"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setPreviewImage({ src: selectedUser.coverPhotoUrl || defaultCoverPhotoSvg, type: 'cover' })}
+                  />
+                  <div className="cover-photo-fade" />
+                </div>
+                <div className="avatar-container has-image">
+                  <img
+                    alt="Profile Preview"
+                    className="avatar-img"
+                    src={selectedUser.profileImageUrl || require('./../../assets/img/theme/user-default.svg')}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setPreviewImage({ src: selectedUser.profileImageUrl || require('./../../assets/img/theme/user-default.svg'), type: 'avatar' })}
+                  />
+                </div>
+              </div>
+              <div className="mx-auto px-4 pb-4" style={{ maxWidth: 480, marginTop: 0 }}>
+                <div className="text-center mb-2" style={{ marginTop: 60, paddingTop: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 24, color: '#222', marginBottom: 2 }}>{selectedUser.name}</div>
+                  <div className="d-flex justify-content-center align-items-center mb-1">
+                    {getRoleBadgeForBlock(selectedUser.role)}
+                  </div>
+                  <div style={{ fontSize: 15, color: '#4fd165', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#4fd165', marginRight: 6 }}></span>
+                    Online
+                  </div>
+                </div>
+                <div className="bg-white shadow rounded-lg p-4 mb-3" style={{ border: '1px solid #f0f1f6', boxShadow: '0 2px 16px 0 rgba(44,62,80,.08)' }}>
+                  <div className="mb-3 font-weight-bold" style={{ color: '#222', fontSize: '1.1rem', letterSpacing: '0.01em' }}><i className="ni ni-single-02 mr-2" />Account Info</div>
+                  <div className="row account-info-row">
+                    <div className="col-12 col-md-6 mb-3">
+                      <span className="text-muted small"><i className="ni ni-email-83 mr-1" />Email</span>
+                      <div className="font-weight-bold account-info-value" id={`email-${selectedUser.id}`}>
+                        {selectedUser.email}
+                      </div>
+                      <UncontrolledTooltip placement="top" target={`email-${selectedUser.id}`}>
+                        {selectedUser.email}
+                      </UncontrolledTooltip>
+                    </div>
+                    <div className="col-12 col-md-6 mb-3">
+                      <span className="text-muted small"><i className="ni ni-badge mr-1" />{selectedUser.role === 'student' ? 'Course' : 'Department'}</span>
+                      <div className="font-weight-bold account-info-value" id={`course-${selectedUser.id}`}>
+                        {selectedUser.role === 'student' ? getCourseAbbreviation(selectedUser.department) : (selectedUser.department || 'N/A')}
+                      </div>
+                      <UncontrolledTooltip placement="top" target={`course-${selectedUser.id}`}>
+                        {selectedUser.department || 'N/A'}
+                      </UncontrolledTooltip>
+                    </div>
+                    {selectedUser.studentNumber && (
+                      <div className="col-12 col-md-6 mb-3">
+                        <span className="text-muted small"><i className="ni ni-hat-3 mr-1" />Student Number</span>
+                        <div className="font-weight-bold account-info-value" id={`student-number-${selectedUser.id}`}>
+                          {selectedUser.studentNumber}
+                        </div>
+                        <UncontrolledTooltip placement="top" target={`student-number-${selectedUser.id}`}>
+                          {selectedUser.studentNumber}
+                        </UncontrolledTooltip>
+                      </div>
+                    )}
+                    {selectedUser.section && (
+                      <div className="col-12 col-md-6 mb-3">
+                        <span className="text-muted small"><i className="ni ni-bullet-list-67 mr-1" />Section</span>
+                        <div className="font-weight-bold account-info-value" id={`section-${selectedUser.id}`}>
+                          {selectedUser.section}
+                        </div>
+                        <UncontrolledTooltip placement="top" target={`section-${selectedUser.id}`}>
+                          {selectedUser.section}
+                        </UncontrolledTooltip>
+                      </div>
+                    )}
+                    {selectedUser.year && (
+                      <div className="col-12 col-md-6 mb-3">
+                        <span className="text-muted small"><i className="ni ni-calendar-grid-58 mr-1" />Year</span>
+                        <div className="font-weight-bold account-info-value" id={`year-${selectedUser.id}`}>
+                          {selectedUser.year}
+                        </div>
+                        <UncontrolledTooltip placement="top" target={`year-${selectedUser.id}`}>
+                          {selectedUser.year}
+                        </UncontrolledTooltip>
+                      </div>
+                    )}
+                    <div className="col-12 col-md-6 mb-3">
+                      <span className="text-muted small"><i className="ni ni-check-bold mr-1" />Status</span>
+                      <div>{getStatusBadge(selectedUser.status)}</div>
+                    </div>
+                    <div className="col-12 col-md-6 mb-3">
+                      <span className="text-muted small"><i className="ni ni-calendar-grid-58 mr-1" />Last Login</span>
+                      <div className="font-weight-bold account-info-value" id={`last-login-${selectedUser.id}`}>
+                        {selectedUser.lastLogin}
+                      </div>
+                      <UncontrolledTooltip placement="top" target={`last-login-${selectedUser.id}`}>
+                        {selectedUser.lastLogin}
+                      </UncontrolledTooltip>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white shadow rounded-lg p-4 mb-3" style={{ border: '1px solid #f0f1f6', boxShadow: '0 2px 16px 0 rgba(44,62,80,.08)' }}>
+                  <div className="mb-3 font-weight-bold" style={{ color: '#222', fontSize: '1.1rem', letterSpacing: '0.01em' }}><i className="ni ni-mobile-button mr-2" />Contact Info</div>
+                  <div className="row">
+                    {selectedUser.contactNumber && (
+                      <div className="col-12 col-md-6 mb-3">
+                        <span className="text-muted small"><i className="ni ni-mobile-button mr-1" />Contact Number</span>
+                        <div className="font-weight-bold">{selectedUser.contactNumber}</div>
+                      </div>
+                    )}
+                    {selectedUser.address && (
+                      <div className="col-12 mb-3">
+                        <span className="text-muted small"><i className="ni ni-pin-3 mr-1" />Address</span>
+                        <div className="font-weight-bold">{selectedUser.address}</div>
+                      </div>
+                    )}
+                    {selectedUser.qrData && (
+                      <div className="col-12 mb-3">
+                        <span className="text-muted small"><i className="ni ni-qr-scanner mr-1" />QR Data</span>
+                        <div className="font-weight-bold">{selectedUser.qrData}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <Button color="primary" onClick={closeUserModal} style={{ minWidth: 120 }}>Close</Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </ModalBody>
+      </Modal>
+      {/* Image Preview Modal/Lightbox */}
+      {previewImage && (
+        <div className="image-preview-overlay" onClick={() => setPreviewImage(null)}>
+          <div className="image-preview-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setPreviewImage(null)}>
+              <i className="ni ni-fat-remove" />
+            </button>
+            <img src={previewImage.src} alt="Preview" className="image-preview-img" />
+          </div>
+        </div>
+      )}
+      <style>{`
+        .user-block-menu-toggle:hover, .user-block-menu-toggle:focus {
+          background: #f6f9fc !important;
+          border-radius: 50% !important;
+          color: #5e72e4 !important;
+        }
+        .modal-x-hover:hover, .modal-x-hover:focus {
+          background: #f6f9fc !important;
+          color: #5e72e4 !important;
+        }
+      `}</style>
     </>
   );
 };

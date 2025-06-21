@@ -28,6 +28,7 @@ import QRLogin from "views/examples/QRLogin.js";
 import QRRegister from "views/examples/QRRegister.js";
 import CreateUser from "views/examples/CreateUser.js";
 import EditUser from "views/examples/EditUser.js";
+import SectionManagement from "views/examples/SectionManagement.js";
 
 var routes = [
   {
@@ -42,6 +43,13 @@ var routes = [
     name: "User Management",
     icon: "ni ni-settings-gear-65 text-blue",
     component: <UserManagement />,
+    layout: "/admin",
+  },
+  {
+    path: "/section-management",
+    name: "Section Management",
+    icon: "ni ni-books text-green",
+    component: <SectionManagement />,
     layout: "/admin",
   },
   {
