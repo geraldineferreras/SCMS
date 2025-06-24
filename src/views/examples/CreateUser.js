@@ -96,6 +96,19 @@ const CreateUser = ({ editUser, editMode, onEditDone }) => {
     }
   }, [editMode, editUser]);
 
+  useEffect(() => {
+    // Set role from query param on initial load
+    if (!editMode) {
+      setRole(tab);
+    }
+  }, [tab, editMode]);
+
+  useEffect(() => {
+    if (role === 'admin') {
+      setDepartment('Administration');
+    }
+  }, [role]);
+
   const handleQrScan = (result, error) => {
     if (!!result) {
       setQrData(result?.text);
@@ -616,7 +629,19 @@ const CreateUser = ({ editUser, editMode, onEditDone }) => {
                           <Col lg="6">
                             <FormGroup>
                               <label className="form-control-label" htmlFor="department">Department</label>
-                              <Input className="form-control-alternative" type="text" id="department" value={department} onChange={e => setDepartment(e.target.value)} />
+                              <Input
+                                type="select"
+                                id="department-select"
+                                value={department}
+                                onChange={(e) => setDepartment(e.target.value)}
+                                required
+                                disabled={role === 'admin'}
+                              >
+                                <option value="">Select Department</option>
+                                <option value="Administration">Administration</option>
+                                <option value="HR">HR</option>
+                                <option value="Faculty">Faculty</option>
+                              </Input>
                             </FormGroup>
                           </Col>
                         </Row>

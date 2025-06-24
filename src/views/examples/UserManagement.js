@@ -16,7 +16,6 @@
 
 */
 import React, { useState, useEffect } from "react";
-import Header from "components/Headers/Header.js";
 import { useNavigate } from "react-router-dom";
 // reactstrap components
 import {
@@ -52,6 +51,7 @@ import {
 } from "reactstrap";
 import classnames from "classnames";
 import userDefault from "../../assets/img/theme/user-default.svg";
+import Header from "components/Headers/Header.js";
 
 const defaultCoverPhotoSvg =
   "data:image/svg+xml;utf8,<svg width='600' height='240' viewBox='0 0 600 240' fill='none' xmlns='http://www.w3.org/2000/svg'><rect width='600' height='240' fill='%23f7f7f7'/><path d='M0 180 Q150 120 300 180 T600 180 V240 H0 Z' fill='%23e3eafc'/><path d='M0 200 Q200 140 400 200 T600 200 V240 H0 Z' fill='%23cfd8dc' opacity='0.7'/></svg>";
@@ -788,62 +788,56 @@ const UserManagement = () => {
 
   return (
     <>
-      <Header compact />
+      <Header showStats={false} />
       {/* Page content */}
       <Container className="mt-4" fluid>
         {/* Table */}
         <Row>
           <div className="col">
             <Card className="shadow">
-              {/* Tabs and Add User Button Row */}
+              {/* Tabs and View Mode Row */}
               <Row className="mb-4 align-items-center">
                 <Col xs="12">
-                  <Nav tabs>
-                    <NavItem>
-                      <NavLink
-                        className={classnames({ active: activeTab === "admin" })}
-                        onClick={() => handleTabChange("admin")}
-                        style={{ 
-                          cursor: "pointer",
-                          borderBottom: activeTab === "admin" ? "3px solid #5e72e4" : "none"
-                        }}
-                      >
-                        Admins
-                      </NavLink>
-                    </NavItem>
-                    <NavItem>
-                      <NavLink
-                        className={classnames({ active: activeTab === "teacher" })}
-                        onClick={() => handleTabChange("teacher")}
-                        style={{ 
-                          cursor: "pointer",
-                          borderBottom: activeTab === "teacher" ? "3px solid #5e72e4" : "none"
-                        }}
-                      >
-                        Teachers
-                      </NavLink>
-                    </NavItem>
-                    <NavItem>
-                      <NavLink
-                        className={classnames({ active: activeTab === "student" })}
-                        onClick={() => handleTabChange("student")}
-                        style={{ 
-                          cursor: "pointer",
-                          borderBottom: activeTab === "student" ? "3px solid #5e72e4" : "none"
-                        }}
-                      >
-                        Students
-                      </NavLink>
-                    </NavItem>
-                  </Nav>
-                </Col>
-              </Row>
-
-              {/* View Mode Tabs */}
-              <Row className="mb-3">
-                <Col xs="12">
-                  <div className="d-flex justify-content-end">
-                    <div className="btn-group" role="group" style={{ marginRight: '1rem' }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <Nav tabs>
+                      <NavItem>
+                        <NavLink
+                          className={classnames({ active: activeTab === "admin" })}
+                          onClick={() => handleTabChange("admin")}
+                          style={{
+                            cursor: "pointer",
+                            borderBottom: activeTab === "admin" ? "3px solid #5e72e4" : "none"
+                          }}
+                        >
+                          Admins
+                        </NavLink>
+                      </NavItem>
+                      <NavItem>
+                        <NavLink
+                          className={classnames({ active: activeTab === "teacher" })}
+                          onClick={() => handleTabChange("teacher")}
+                          style={{
+                            cursor: "pointer",
+                            borderBottom: activeTab === "teacher" ? "3px solid #5e72e4" : "none"
+                          }}
+                        >
+                          Teachers
+                        </NavLink>
+                      </NavItem>
+                      <NavItem>
+                        <NavLink
+                          className={classnames({ active: activeTab === "student" })}
+                          onClick={() => handleTabChange("student")}
+                          style={{
+                            cursor: "pointer",
+                            borderBottom: activeTab === "student" ? "3px solid #5e72e4" : "none"
+                          }}
+                        >
+                          Students
+                        </NavLink>
+                      </NavItem>
+                    </Nav>
+                    <div className="btn-group" role="group" style={{ marginLeft: '1rem' }}>
                       <Button
                         color={viewMode === "table" ? "primary" : "secondary"}
                         outline={viewMode !== "table"}
@@ -851,7 +845,7 @@ const UserManagement = () => {
                         onClick={() => setViewMode("table")}
                         className="mr-1"
                       >
-                        <i className="ni ni-chart-bar-32 mr-1"></i>
+                        <i className="ni ni-bullet-list-67 mr-1"></i>
                         Table View
                       </Button>
                       <Button
