@@ -152,6 +152,7 @@ const SectionManagement = () => {
                         outline={viewMode !== 'block'}
                         size="sm"
                         onClick={() => setViewMode('block')}
+                        style={{ marginRight: '5px' }}
                       >
                         <i className="ni ni-app mr-1"></i>
                         Block View
@@ -161,102 +162,119 @@ const SectionManagement = () => {
                 </Col>
               </Row>
               {/* Search and Filter Row */}
-              <Row className="mb-4">
-                <Col md="4" className="pl-4 d-flex flex-column align-items-start">
-                  {/* Year filter buttons in a horizontal row above search bar and course name */}
-                  <div className="btn-group mb-2" role="group">
-                    {['All Years', '1st Year', '2nd Year', '3rd Year', '4th Year'].map((year, idx) => (
-                      <Button
-                        key={year}
-                        color={activeYear === idx ? 'primary' : 'secondary'}
-                        outline={false}
-                        style={{
-                          minWidth: '50px',
-                          fontWeight: 600,
-                          fontSize: '0.89rem',
-                          border: 'none',
-                          boxShadow: 'none',
-                          background: activeYear === idx ? undefined : '#f6f9fc',
-                          color: activeYear === idx ? '#fff' : '#4385B1',
-                          marginRight: '10px',
-                          padding: '4px 10px',
-                          borderRadius: activeYear === idx ? '8px' : '6px',
-                          textAlign: 'left'
-                        }}
-                        onClick={() => setActiveYear(idx)}
-                      >
-                        {year}
+              <Row style={{ marginLeft: 0, marginRight: 0 }}>
+                <Col md="12" className="pl-3 pr-3">
+                  {/* Search bar in a single row with space to the right */}
+                  <div className="d-flex align-items-center mb-2" style={{ width: '100%' }}>
+                    <InputGroup style={{ width: '100%', marginBottom: '6px' }}>
+                      <InputGroupAddon addonType="prepend">
+                        <InputGroupText>
+                          <i className="fas fa-search" />
+                        </InputGroupText>
+                      </InputGroupAddon>
+                      <Input
+                        placeholder="Search sections..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ minWidth: 0 }}
+                      />
+                    </InputGroup>
+                  </div>
+                  {/* Year filter buttons below search bar */}
+                  <div className="d-flex justify-content-center">
+                    <div className="btn-group mb-2" role="group" style={{ marginTop: '8px', marginBottom: '16px' }}>
+                      {['All Years', '1st Year', '2nd Year', '3rd Year', '4th Year'].map((year, idx) => (
+                        <Button
+                          key={year}
+                          color={activeYear === idx ? 'primary' : 'secondary'}
+                          outline={false}
+                          style={{
+                            minWidth: '56px',
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            border: 'none',
+                            boxShadow: 'none',
+                            background: activeYear === idx ? undefined : '#f6f9fc',
+                            color: activeYear === idx ? '#fff' : '#4385B1',
+                            marginRight: '7px',
+                            padding: '3px 7px',
+                            borderRadius: '0.375rem',
+                            textAlign: 'center',
+                            whiteSpace: 'nowrap'
+                          }}
+                          onClick={() => setActiveYear(idx)}
+                        >
+                          {year}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Course name and action buttons row below year filter */}
+                  <div className="w-100 d-flex justify-content-between align-items-center" style={{ marginTop: '10px', marginBottom: '16px' }}>
+                    <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#32325d' }}>
+                      {currentCourseName} ({filteredAndSortedSections.length})
+                    </div>
+                    <div>
+                      <Button color="info" outline className="mr-2" size="sm" style={{ padding: '3px 10px', fontSize: '0.75rem' }}>
+                        <i className="ni ni-archive-2 mr-2" /> Export
                       </Button>
-                    ))}
+                      <Button color="primary" size="sm" style={{ padding: '3px 6px', fontSize: '0.75rem' }}>
+                        <i className="ni ni-fat-add" /> Add New Section
+                      </Button>
+                    </div>
                   </div>
-                  <InputGroup className="mb-2">
-                    <InputGroupAddon addonType="prepend">
-                      <InputGroupText>
-                        <i className="fas fa-search" />
-                      </InputGroupText>
-                    </InputGroupAddon>
-                    <Input
-                      placeholder="Search sections..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
-                  <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#32325d' }}>
-                    {currentCourseName} ({filteredAndSortedSections.length})
-                  </div>
-                </Col>
-                <Col md="8" className="d-flex align-items-end">
-                  {/* (other controls remain here) */}
                 </Col>
               </Row>
               {/* Table View */}
-              {viewMode === 'table' && (
-                <Table className="align-items-center table-flush" responsive>
-                  <thead className="thead-light">
-                    <tr>
-                      <th scope="col" onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                        SECTION NAME{getSortIndicator('name')}
-                      </th>
-                      <th scope="col" onClick={() => handleSort('year')} style={{ cursor: 'pointer' }}>
-                        YEAR{getSortIndicator('year')}
-                      </th>
-                      <th scope="col">ADVISER</th>
-                      <th scope="col" onClick={() => handleSort('enrolled')} style={{ cursor: 'pointer' }}>
-                        ENROLLED{getSortIndicator('enrolled')}
-                      </th>
-                      <th scope="col">A.Y.</th>
-                      <th scope="col">SEMESTER</th>
-                      <th scope="col" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAndSortedSections.map(section => {
-                      const adviser = teachers.find(t => t.id === section.adviserId);
-                      return (
-                        <tr key={section.id}>
-                          <td>{section.name}</td>
-                          <td>{section.year}</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <img src={adviser?.avatar} alt={adviser?.name} className="avatar avatar-sm rounded-circle mr-2" />
-                              <div>
-                                <div className="font-weight-bold">{adviser?.name}</div>
-                                <div className="text-muted small">{adviser?.email}</div>
+              <div style={{ marginTop: '0' }}>
+                {viewMode === 'table' && (
+                  <Table className="align-items-center table-flush" responsive>
+                    <thead className="thead-light">
+                      <tr>
+                        <th scope="col" onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                          SECTION NAME{getSortIndicator('name')}
+                        </th>
+                        <th scope="col" onClick={() => handleSort('year')} style={{ cursor: 'pointer' }}>
+                          YEAR{getSortIndicator('year')}
+                        </th>
+                        <th scope="col">ADVISER</th>
+                        <th scope="col" onClick={() => handleSort('enrolled')} style={{ cursor: 'pointer' }}>
+                          ENROLLED{getSortIndicator('enrolled')}
+                        </th>
+                        <th scope="col">A.Y.</th>
+                        <th scope="col">SEMESTER</th>
+                        <th scope="col" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAndSortedSections.map(section => {
+                        const adviser = teachers.find(t => t.id === section.adviserId);
+                        return (
+                          <tr key={section.id}>
+                            <td>{section.name}</td>
+                            <td>{section.year}</td>
+                            <td>
+                              <div className="d-flex align-items-center">
+                                <img src={adviser?.avatar} alt={adviser?.name} className="avatar avatar-sm rounded-circle mr-2" />
+                                <div>
+                                  <div className="font-weight-bold">{adviser?.name}</div>
+                                  <div className="text-muted small">{adviser?.email}</div>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td>{section.enrolled}</td>
-                          <td>{section.ay}</td>
-                          <td>{section.semester}</td>
-                          <td>
-                            <Button color="primary" size="sm">Edit</Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              )}
+                            </td>
+                            <td>{section.enrolled}</td>
+                            <td>{section.ay}</td>
+                            <td>{section.semester}</td>
+                            <td>
+                              <Button color="primary" size="sm">Edit</Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                )}
+              </div>
               {/* Block View (if needed) can be added here */}
             </Card>
           </div>
