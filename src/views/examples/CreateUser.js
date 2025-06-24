@@ -24,6 +24,7 @@ import userDefault from "../../assets/img/theme/user-default.svg";
 import Cropper from 'react-easy-crop';
 import "./CreateUser.css";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import AdminNavbar from "components/Navbars/AdminNavbar.js";
 
 const defaultCoverPhotoSvg =
   "data:image/svg+xml;utf8,<svg width='600' height='240' viewBox='0 0 600 240' fill='none' xmlns='http://www.w3.org/2000/svg'><rect width='600' height='240' fill='%23f7f7f7'/><path d='M0 180 Q150 120 300 180 T600 180 V240 H0 Z' fill='%23e3eafc'/><path d='M0 200 Q200 140 400 200 T600 200 V240 H0 Z' fill='%23cfd8dc' opacity='0.7'/></svg>";
@@ -366,7 +367,7 @@ const CreateUser = ({ editUser, editMode, onEditDone }) => {
 
   return (
     <>
-      <Header compact />
+      <Header showStats={false} />
       <Container className="mt-4" fluid>
         <Row>
           <Col className="order-xl-1 mx-auto" xl="8" lg="8" md="10">

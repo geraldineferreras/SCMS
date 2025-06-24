@@ -386,22 +386,37 @@ const UserManagement = () => {
     return map[course] || course;
   };
 
+  // Helper to get sort indicator
+  const getSortIndicator = (key) => {
+    if (sortBy === key) {
+      return sortOrder === 'asc' ? ' ↑' : ' ↓';
+    }
+    return ' ↑';
+  };
+
   const renderUserTable = (users, title, color) => {
     if (users.length === 0) return null;
-    
     const { totalItems, totalPages, startItem, endItem } = getPaginationInfo();
-    
     return (
       <div className="mb-4">
-        <h3 className="text-dark mb-3 pl-4">{title} ({users.length})</h3>
         <Table className="align-items-center table-flush" responsive>
           <thead className="thead-light">
             <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Email</th>
-              <th scope="col">Course/Year/Section</th>
-              <th scope="col">Status</th>
-              <th scope="col">Last Login</th>
+              <th scope="col" onClick={() => { setSortBy('name'); setSortOrder(sortBy === 'name' && sortOrder === 'asc' ? 'desc' : 'asc'); }} style={{ cursor: 'pointer' }}>
+                Name{getSortIndicator('name')}
+              </th>
+              <th scope="col" onClick={() => { setSortBy('email'); setSortOrder(sortBy === 'email' && sortOrder === 'asc' ? 'desc' : 'asc'); }} style={{ cursor: 'pointer' }}>
+                Email{getSortIndicator('email')}
+              </th>
+              <th scope="col" onClick={() => { setSortBy('department'); setSortOrder(sortBy === 'department' && sortOrder === 'asc' ? 'desc' : 'asc'); }} style={{ cursor: 'pointer' }}>
+                {activeTab === 'student' ? 'Course/Year/Section' : 'Department'}{getSortIndicator('department')}
+              </th>
+              <th scope="col" onClick={() => { setSortBy('status'); setSortOrder(sortBy === 'status' && sortOrder === 'asc' ? 'desc' : 'asc'); }} style={{ cursor: 'pointer' }}>
+                Status{getSortIndicator('status')}
+              </th>
+              <th scope="col" onClick={() => { setSortBy('lastLogin'); setSortOrder(sortBy === 'lastLogin' && sortOrder === 'asc' ? 'desc' : 'asc'); }} style={{ cursor: 'pointer' }}>
+                Last Login{getSortIndicator('lastLogin')}
+              </th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -485,6 +500,7 @@ const UserManagement = () => {
           <div className="d-flex flex-row align-items-center">
             <span className="mr-2 text-muted small">Show</span>
             <Input
+              className="custom-focus-effect"
               type="select"
               value={itemsPerPage}
               onChange={e => handleItemsPerPageChange(parseInt(e.target.value))}
@@ -591,8 +607,7 @@ const UserManagement = () => {
     
     return (
       <div className="mb-4">
-        <h3 className="text-dark mb-3 pl-4">{title} ({users.length})</h3>
-        <Row>
+        <Row className="px-3">
           {getPaginatedUsers(users).map((user) => (
             <Col key={user.id} lg="4" md="6" sm="12" className="mb-3">
               <Card className="shadow-sm position-relative">
@@ -657,7 +672,6 @@ const UserManagement = () => {
                       <small className="text-muted">ID: {user.id}</small>
                     </div>
                   </div>
-                  
                   <div className="mb-2">
                     <small className="text-muted d-block">
                       <i className="ni ni-email-83 mr-1"></i>
@@ -672,7 +686,6 @@ const UserManagement = () => {
                       Last Login: {user.lastLogin}
                     </small>
                   </div>
-                  
                   <div className="d-flex align-items-center">
                     {getStatusBadge(user.status)}
                   </div>
@@ -687,6 +700,7 @@ const UserManagement = () => {
           <div className="d-flex flex-row align-items-center">
             <span className="mr-2 text-muted small">Show</span>
             <Input
+              className="custom-focus-effect"
               type="select"
               value={itemsPerPage}
               onChange={e => handleItemsPerPageChange(parseInt(e.target.value))}
@@ -798,8 +812,8 @@ const UserManagement = () => {
               {/* Tabs and View Mode Row */}
               <Row className="mb-4 align-items-center">
                 <Col xs="12">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <Nav tabs>
+                  <div className="d-flex justify-content-between align-items-center flex-nowrap">
+                    <Nav tabs className="flex-shrink-0">
                       <NavItem>
                         <NavLink
                           className={classnames({ active: activeTab === "admin" })}
@@ -837,7 +851,7 @@ const UserManagement = () => {
                         </NavLink>
                       </NavItem>
                     </Nav>
-                    <div className="btn-group" role="group" style={{ marginLeft: '1rem' }}>
+                    <div className="btn-group flex-shrink-0" role="group" style={{ marginLeft: '1rem' }}>
                       <Button
                         color={viewMode === "table" ? "primary" : "secondary"}
                         outline={viewMode !== "table"}
@@ -846,74 +860,60 @@ const UserManagement = () => {
                         className="mr-1"
                       >
                         <i className="ni ni-bullet-list-67 mr-1"></i>
-                        Table View
+                        <span className="d-none d-sm-inline">Table</span>
+                        <span className="d-sm-none">Table</span>
                       </Button>
                       <Button
                         color={viewMode === "block" ? "primary" : "secondary"}
                         outline={viewMode !== "block"}
                         size="sm"
                         onClick={() => setViewMode("block")}
+                        style={{ marginRight: '5px' }}
                       >
                         <i className="ni ni-app mr-1"></i>
-                        Block View
+                        <span className="d-none d-sm-inline">Block</span>
+                        <span className="d-sm-none">Block</span>
                       </Button>
                     </div>
                   </div>
                 </Col>
               </Row>
-
-              {/* Search and Show Entries Row */}
-              <Row className="mb-4">
-                <Col md="4" className="pl-4">
-                  <InputGroup>
-                    <InputGroupAddon addonType="prepend">
-                      <InputGroupText>
-                        <i className="ni ni-zoom-split-in" />
-                      </InputGroupText>
-                    </InputGroupAddon>
-                    <Input
-                      placeholder="Search users..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
-                </Col>
-                <Col md="2">
-                  <Input
-                    type="select"
-                    value={`${sortBy}-${sortOrder}`}
-                    onChange={e => {
-                      const [field, order] = e.target.value.split('-');
-                      setSortBy(field);
-                      setSortOrder(order);
-                    }}
-                    className="text-dark"
-                    style={{ width: '200px', minWidth: '150px' }}
-                  >
-                    <option value="name-asc">Name A to Z</option>
-                    <option value="name-desc">Name Z to A</option>
-                    <option value="email-asc">Email A to Z</option>
-                    <option value="email-desc">Email Z to A</option>
-                    <option value="department-asc">Department A to Z</option>
-                    <option value="department-desc">Department Z to A</option>
-                    <option value="status-asc">Status A to Z</option>
-                    <option value="status-desc">Status Z to A</option>
-                    <option value="lastLogin-desc">Last Login (Newest First)</option>
-                    <option value="lastLogin-asc">Last Login (Oldest First)</option>
-                  </Input>
-                </Col>
-                <Col md="6" className="text-right pr-4">
-                  <Button color="info" outline className="mr-2">
-                    <i className="ni ni-chart-bar-32 mr-2"></i>
-                    Export
-                  </Button>
-                  <Button color="primary" onClick={() => navigate(`/admin/create-user?tab=${activeTab}&view=${viewMode}`)}>
-                    <i className="ni ni-fat-add mr-2"></i>
-                    Add New User
-                  </Button>
+              {/* Search and Show Entries Row with padding */}
+              <Row style={{ marginLeft: 0, marginRight: 0 }}>
+                <Col md="12" className="pl-3 pr-3">
+                  {/* Search bar in a single row with space to the right */}
+                  <div className="d-flex align-items-center mb-2" style={{ width: '100%' }}>
+                    <InputGroup style={{ width: '100%', marginBottom: '6px' }}>
+                      <InputGroupAddon addonType="prepend">
+                        <InputGroupText>
+                          <i className="ni ni-zoom-split-in" />
+                        </InputGroupText>
+                      </InputGroupAddon>
+                      <Input
+                        className="custom-focus-effect"
+                        placeholder="Search users..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ minWidth: 0 }}
+                      />
+                    </InputGroup>
+                  </div>
+                  {/* Role name below action buttons, matching SectionManagement course name */}
+                  <div className="w-100 d-flex justify-content-between align-items-center" style={{ marginTop: '26px', marginBottom: '16px' }}>
+                    <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#32325d' }}>
+                      {activeTab === 'admin' ? 'Administrators' : activeTab === 'teacher' ? 'Teachers' : 'Students'} ({getCurrentUsers().length})
+                    </div>
+                    <div>
+                      <Button color="info" outline className="mr-2" size="sm" style={{ padding: '3px 10px', fontSize: '0.75rem' }}>
+                        <i className="ni ni-archive-2 mr-2" /> Export
+                      </Button>
+                      <Button color="primary" size="sm" style={{ padding: '3px 6px', fontSize: '0.75rem' }} onClick={() => navigate(`/admin/create-user?tab=${activeTab}&view=${viewMode}`)}>
+                        <i className="ni ni-fat-add" /> Add New User
+                      </Button>
+                    </div>
+                  </div>
                 </Col>
               </Row>
-
               {/* Tabbed User Tables */}
               <TabContent activeTab={activeTab}>
                 <TabPane tabId="admin">
@@ -1077,61 +1077,13 @@ const UserManagement = () => {
                     </div>
                   </div>
                 </div>
-                <div className="bg-white shadow rounded-lg p-4 mb-3" style={{ border: '1px solid #f0f1f6', boxShadow: '0 2px 16px 0 rgba(44,62,80,.08)' }}>
-                  <div className="mb-3 font-weight-bold" style={{ color: '#222', fontSize: '1.1rem', letterSpacing: '0.01em' }}><i className="ni ni-mobile-button mr-2" />Contact Info</div>
-                  <div className="row">
-                    {selectedUser.contactNumber && (
-                      <div className="col-12 col-md-6 mb-3">
-                        <span className="text-muted small"><i className="ni ni-mobile-button mr-1" />Contact Number</span>
-                        <div className="font-weight-bold">{selectedUser.contactNumber}</div>
-                      </div>
-                    )}
-                    {selectedUser.address && (
-                      <div className="col-12 mb-3">
-                        <span className="text-muted small"><i className="ni ni-pin-3 mr-1" />Address</span>
-                        <div className="font-weight-bold">{selectedUser.address}</div>
-                      </div>
-                    )}
-                    {selectedUser.qrData && (
-                      <div className="col-12 mb-3">
-                        <span className="text-muted small"><i className="ni ni-qr-scanner mr-1" />QR Data</span>
-                        <div className="font-weight-bold">{selectedUser.qrData}</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 text-center">
-                  <Button color="primary" onClick={closeUserModal} style={{ minWidth: 120 }}>Close</Button>
-                </div>
               </div>
             </div>
           )}
         </ModalBody>
       </Modal>
-      {/* Image Preview Modal/Lightbox */}
-      {previewImage && (
-        <div className="image-preview-overlay" onClick={() => setPreviewImage(null)}>
-          <div className="image-preview-modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={() => setPreviewImage(null)}>
-              <i className="ni ni-fat-remove" />
-            </button>
-            <img src={previewImage.src} alt="Preview" className="image-preview-img" />
-          </div>
-        </div>
-      )}
-      <style>{`
-        .user-block-menu-toggle:hover, .user-block-menu-toggle:focus {
-          background: #f6f9fc !important;
-          border-radius: 50% !important;
-          color: #5e72e4 !important;
-        }
-        .modal-x-hover:hover, .modal-x-hover:focus {
-          background: #f6f9fc !important;
-          color: #5e72e4 !important;
-        }
-      `}</style>
     </>
   );
 };
 
-export default UserManagement; 
+export default UserManagement;

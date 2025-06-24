@@ -145,7 +145,7 @@ const SectionManagement = () => {
                         className="mr-1"
                       >
                         <i className="ni ni-bullet-list-67 mr-1"></i>
-                        Table View
+                        Table
                       </Button>
                       <Button
                         color={viewMode === 'block' ? 'primary' : 'secondary'}
@@ -155,7 +155,7 @@ const SectionManagement = () => {
                         style={{ marginRight: '5px' }}
                       >
                         <i className="ni ni-app mr-1"></i>
-                        Block View
+                        Block
                       </Button>
                     </div>
                   </div>
@@ -210,7 +210,7 @@ const SectionManagement = () => {
                     </div>
                   </div>
                   {/* Course name and action buttons row below year filter */}
-                  <div className="w-100 d-flex justify-content-between align-items-center" style={{ marginTop: '10px', marginBottom: '16px' }}>
+                  <div className="w-100 d-flex justify-content-between align-items-center" style={{ marginTop: '20px', marginBottom: '16px' }}>
                     <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#32325d' }}>
                       {currentCourseName} ({filteredAndSortedSections.length})
                     </div>
@@ -237,12 +237,18 @@ const SectionManagement = () => {
                         <th scope="col" onClick={() => handleSort('year')} style={{ cursor: 'pointer' }}>
                           YEAR{getSortIndicator('year')}
                         </th>
-                        <th scope="col">ADVISER</th>
+                        <th scope="col" onClick={() => handleSort('adviserId')} style={{ cursor: 'pointer' }}>
+                          ADVISER{getSortIndicator('adviserId')}
+                        </th>
                         <th scope="col" onClick={() => handleSort('enrolled')} style={{ cursor: 'pointer' }}>
                           ENROLLED{getSortIndicator('enrolled')}
                         </th>
-                        <th scope="col">A.Y.</th>
-                        <th scope="col">SEMESTER</th>
+                        <th scope="col" onClick={() => handleSort('ay')} style={{ cursor: 'pointer' }}>
+                          A.Y.{getSortIndicator('ay')}
+                        </th>
+                        <th scope="col" onClick={() => handleSort('semester')} style={{ cursor: 'pointer' }}>
+                          SEMESTER{getSortIndicator('semester')}
+                        </th>
                         <th scope="col" />
                       </tr>
                     </thead>
