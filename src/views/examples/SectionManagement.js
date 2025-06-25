@@ -15,7 +15,7 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Button,
   Card,
@@ -32,9 +32,13 @@ import {
   NavItem,
   NavLink,
   Table,
+  Pagination,
+  PaginationItem,
+  PaginationLink,
 } from "reactstrap";
 import classnames from "classnames";
 import Header from "components/Headers/Header.js";
+import { useNavigate } from "react-router-dom";
 
 // Mock Data - Replace with your actual data fetching logic
 const getMockData = () => ({
@@ -62,16 +66,36 @@ const getMockData = () => ({
 
 
 const SectionManagement = () => {
-  const [activeCourseTab, setActiveCourseTab] = useState("bsit");
-  const [viewMode, setViewMode] = useState("table"); // 'table' or 'block'
+  const [sections, setSections] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeCourseTab, setActiveCourseTab] = useState("bsit");
+  const [viewMode, setViewMode] = useState("table");
   const [activeYear, setActiveYear] = useState(0);
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
   
-  const { sections, teachers, courses } = useMemo(() => getMockData(), []);
+  const { sections: mockSections, teachers, courses } = useMemo(() => getMockData(), []);
 
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const navigate = useNavigate();
+
+  // Check screen size on mount and resize
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -89,7 +113,7 @@ const SectionManagement = () => {
   };
 
   const filteredAndSortedSections = useMemo(() => {
-    let filtered = sections
+    let filtered = mockSections
       .filter(section => section.course === activeCourseTab)
       .filter(section => activeYear === 0 || section.year === ["All Years", "1st Year", "2nd Year", "3rd Year", "4th Year"][activeYear])
       .filter(section => section.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -107,13 +131,28 @@ const SectionManagement = () => {
     }
 
     return filtered;
-  }, [sections, activeCourseTab, activeYear, searchTerm, sortConfig]);
+  }, [mockSections, activeCourseTab, activeYear, searchTerm, sortConfig]);
+
+  // Calculate pagination info
+  const totalItems = filteredAndSortedSections.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedSections = filteredAndSortedSections.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1);
+  };
 
   const currentCourseName = courses.find(c => c.id === activeCourseTab)?.name || "Sections";
 
   return (
     <>
-      <Header showStats={false} />
+      {!isMobile && <Header showStats={false} />}
       <Container className="mt-4" fluid>
         <Row>
           <div className="col">
@@ -222,7 +261,7 @@ const SectionManagement = () => {
                       <Button color="info" outline className="mr-2" size="sm" style={{ padding: '3px 10px', fontSize: '0.75rem' }}>
                         <i className="ni ni-archive-2 mr-2" /> Export
                       </Button>
-                      <Button color="primary" size="sm" style={{ padding: '3px 6px', fontSize: '0.75rem' }}>
+                      <Button color="primary" size="sm" style={{ padding: '3px 6px', fontSize: '0.75rem' }} onClick={() => navigate('/admin/create-section')}>
                         <i className="ni ni-fat-add" /> Add New Section
                       </Button>
                     </div>
@@ -232,57 +271,165 @@ const SectionManagement = () => {
               {/* Table View */}
               <div style={{ marginTop: '0' }}>
                 {viewMode === 'table' && (
-                  <Table className="align-items-center table-flush" responsive>
-                    <thead className="thead-light">
-                      <tr>
-                        <th scope="col" onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                          SECTION NAME{getSortIndicator('name')}
-                        </th>
-                        <th scope="col" onClick={() => handleSort('year')} style={{ cursor: 'pointer' }}>
-                          YEAR{getSortIndicator('year')}
-                        </th>
-                        <th scope="col" onClick={() => handleSort('adviserId')} style={{ cursor: 'pointer' }}>
-                          ADVISER{getSortIndicator('adviserId')}
-                        </th>
-                        <th scope="col" onClick={() => handleSort('enrolled')} style={{ cursor: 'pointer' }}>
-                          ENROLLED{getSortIndicator('enrolled')}
-                        </th>
-                        <th scope="col" onClick={() => handleSort('ay')} style={{ cursor: 'pointer' }}>
-                          A.Y.{getSortIndicator('ay')}
-                        </th>
-                        <th scope="col" onClick={() => handleSort('semester')} style={{ cursor: 'pointer' }}>
-                          SEMESTER{getSortIndicator('semester')}
-                        </th>
-                        <th scope="col" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAndSortedSections.map(section => {
-                        const adviser = teachers.find(t => t.id === section.adviserId);
-                        return (
-                          <tr key={section.id}>
-                            <td>{section.name}</td>
-                            <td>{section.year}</td>
-                            <td>
-                              <div className="d-flex align-items-center">
-                                <img src={adviser?.avatar} alt={adviser?.name} className="avatar avatar-sm rounded-circle mr-2" />
-                                <div>
-                                  <div className="font-weight-bold">{adviser?.name}</div>
-                                  <div className="text-muted small">{adviser?.email}</div>
+                  <>
+                    <Table className="align-items-center table-flush" responsive>
+                      <thead className="thead-light">
+                        <tr>
+                          <th scope="col" onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
+                            SECTION NAME{getSortIndicator('name')}
+                          </th>
+                          <th scope="col" onClick={() => handleSort('year')} style={{ cursor: 'pointer' }}>
+                            YEAR{getSortIndicator('year')}
+                          </th>
+                          <th scope="col" onClick={() => handleSort('adviserId')} style={{ cursor: 'pointer' }}>
+                            ADVISER{getSortIndicator('adviserId')}
+                          </th>
+                          <th scope="col" onClick={() => handleSort('enrolled')} style={{ cursor: 'pointer' }}>
+                            ENROLLED{getSortIndicator('enrolled')}
+                          </th>
+                          <th scope="col" onClick={() => handleSort('ay')} style={{ cursor: 'pointer' }}>
+                            A.Y.{getSortIndicator('ay')}
+                          </th>
+                          <th scope="col" onClick={() => handleSort('semester')} style={{ cursor: 'pointer' }}>
+                            SEMESTER{getSortIndicator('semester')}
+                          </th>
+                          <th scope="col">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedSections.map(section => {
+                          const adviser = teachers.find(t => t.id === section.adviserId);
+                          return (
+                            <tr key={section.id}>
+                              <td>{section.name}</td>
+                              <td>{section.year}</td>
+                              <td>
+                                <div className="d-flex align-items-center">
+                                  <img src={adviser?.avatar} alt={adviser?.name} className="avatar avatar-sm rounded-circle mr-2" />
+                                  <div>
+                                    <div className="font-weight-bold">{adviser?.name}</div>
+                                    <div className="text-muted small">{adviser?.email}</div>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td>{section.enrolled}</td>
-                            <td>{section.ay}</td>
-                            <td>{section.semester}</td>
-                            <td>
-                              <Button color="primary" size="sm">Edit</Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </Table>
+                              </td>
+                              <td>{section.enrolled}</td>
+                              <td>{section.ay}</td>
+                              <td>{section.semester}</td>
+                              <td onClick={e => e.stopPropagation()}>
+                                <Button
+                                  color="primary"
+                                  size="sm"
+                                  className="mr-2"
+                                  // onClick={() => handleEditSection(section.id)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  color="danger"
+                                  size="sm"
+                                  // onClick={() => handleDeleteSection(section.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                    {/* Pagination UI */}
+                    <div style={{height: '80px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                      <div className="d-flex flex-row align-items-center" style={{ marginLeft: '1.5rem' }}>
+                        <span className="mr-2 text-muted small">Show</span>
+                        <Input
+                          className="custom-focus-effect"
+                          type="select"
+                          value={itemsPerPage}
+                          onChange={handleItemsPerPageChange}
+                          style={{ width: '80px', fontSize: '0.95rem', marginRight: '8px' }}
+                        >
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </Input>
+                        <span className="text-muted small" style={{ whiteSpace: 'nowrap' }}>
+                          of {totalItems} entries
+                        </span>
+                      </div>
+                      <Pagination size="sm" className="mb-0 justify-content-end" style={{margin: 0, marginRight: '1.5rem'}}>
+                        <PaginationItem disabled={currentPage === 1}>
+                          <PaginationLink
+                            previous
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            style={{ cursor: currentPage === 1 ? 'default' : 'pointer' }}
+                          />
+                        </PaginationItem>
+                        {currentPage > 2 && !isMobile && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(1)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              1
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage > 3 && !isMobile && (
+                          <PaginationItem disabled>
+                            <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>...</PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage > 1 && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              {currentPage - 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        <PaginationItem active>
+                          <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>
+                            {currentPage}
+                          </PaginationLink>
+                        </PaginationItem>
+                        {currentPage < totalPages && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              {currentPage + 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage < totalPages - 2 && !isMobile && (
+                          <PaginationItem disabled>
+                            <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>...</PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage < totalPages - 1 && !isMobile && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(totalPages)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              {totalPages}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        <PaginationItem disabled={currentPage === totalPages}>
+                          <PaginationLink
+                            next
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            style={{ cursor: currentPage === totalPages ? 'default' : 'pointer' }}
+                          />
+                        </PaginationItem>
+                      </Pagination>
+                    </div>
+                  </>
                 )}
               </div>
               {/* Block View (if needed) can be added here */}

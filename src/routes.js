@@ -29,6 +29,7 @@ import QRRegister from "views/examples/QRRegister.js";
 import CreateUser from "views/examples/CreateUser.js";
 import EditUser from "views/examples/EditUser.js";
 import SectionManagement from "views/examples/SectionManagement.js";
+import CreateSection from "views/examples/CreateSection.js";
 
 var routes = [
   {
@@ -127,6 +128,13 @@ var routes = [
     name: "Edit User",
     icon: "ni ni-single-02 text-primary",
     component: <EditUser />,
+    layout: "/admin",
+  },
+  {
+    path: "/create-section",
+    name: "Create Section",
+    icon: "ni ni-fat-add text-primary",
+    component: <CreateSection />,
     layout: "/admin",
   },
 ];

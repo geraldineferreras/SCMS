@@ -56,6 +56,7 @@ var ps;
 
 const Sidebar = (props) => {
   const [collapseOpen, setCollapseOpen] = useState();
+  const [isSidebarSearchFocused, setIsSidebarSearchFocused] = useState(false);
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
     return props.location.pathname.indexOf(routeName) > -1 ? "active" : "";
@@ -213,18 +214,19 @@ const Sidebar = (props) => {
           </div>
           {/* Form */}
           <Form className="mt-4 mb-3 d-md-none">
-            <InputGroup className="input-group-rounded input-group-merge">
-              <Input
-                aria-label="Search"
-                className="form-control-rounded form-control-prepended"
-                placeholder="Search"
-                type="search"
-              />
+            <InputGroup className={isSidebarSearchFocused ? 'focused' : ''} style={{ width: '100%', marginBottom: '6px' }}>
               <InputGroupAddon addonType="prepend">
                 <InputGroupText>
-                  <span className="fa fa-search" />
+                  <i className="fas fa-search" />
                 </InputGroupText>
               </InputGroupAddon>
+              <Input
+                placeholder="Search"
+                type="search"
+                style={{ minWidth: 0 }}
+                onFocus={() => setIsSidebarSearchFocused(true)}
+                onBlur={() => setIsSidebarSearchFocused(false)}
+              />
             </InputGroup>
           </Form>
           {/* Navigation */}

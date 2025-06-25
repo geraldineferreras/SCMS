@@ -399,7 +399,7 @@ const UserManagement = () => {
     if (users.length === 0) return null;
     const { totalItems, totalPages, startItem, endItem } = getPaginationInfo();
     return (
-      <div className="mb-4">
+      <div style={{ marginBottom: 0 }}>
         <Table className="align-items-center table-flush" responsive>
           <thead className="thead-light">
             <tr>
@@ -497,8 +497,8 @@ const UserManagement = () => {
         </Table>
         
         {/* Pagination */}
-        <div className="d-flex flex-row justify-content-between align-items-center w-100 mt-3 px-4">
-          <div className="d-flex flex-row align-items-center">
+        <div style={{height: '80px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <div className="d-flex flex-row align-items-center" style={{ marginLeft: '1.5rem' }}>
             <span className="mr-2 text-muted small">Show</span>
             <Input
               className="custom-focus-effect"
@@ -516,7 +516,7 @@ const UserManagement = () => {
               of {totalItems} entries
             </span>
           </div>
-          <Pagination size="sm" className="mb-0 justify-content-center">
+          <Pagination size="sm" className="mb-0 justify-content-end" style={{margin: 0, marginRight: '1.5rem'}}>
             <PaginationItem disabled={currentPage === 1}>
               <PaginationLink
                 previous
@@ -697,8 +697,8 @@ const UserManagement = () => {
         </Row>
         
         {/* Pagination */}
-        <div className="d-flex flex-row justify-content-between align-items-center w-100 mt-3 px-4">
-          <div className="d-flex flex-row align-items-center">
+        <div style={{height: '80px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+          <div className="d-flex flex-row align-items-center" style={{ marginLeft: '1.5rem' }}>
             <span className="mr-2 text-muted small">Show</span>
             <Input
               className="custom-focus-effect"
@@ -716,7 +716,7 @@ const UserManagement = () => {
               of {totalItems} entries
             </span>
           </div>
-          <Pagination size="sm" className="mb-0 justify-content-center">
+          <Pagination size="sm" className="mb-0 justify-content-end" style={{margin: 0, marginRight: '1.5rem'}}>
             <PaginationItem disabled={currentPage === 1}>
               <PaginationLink
                 previous
@@ -803,7 +803,7 @@ const UserManagement = () => {
 
   return (
     <>
-      <Header showStats={false} />
+      {!isMobile && <Header showStats={false} />}
       {/* Page content */}
       <Container className="mt-4" fluid>
         {/* Table */}

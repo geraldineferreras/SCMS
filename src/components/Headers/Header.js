@@ -16,13 +16,28 @@
 
 */
 
+import React, { useState, useEffect } from "react";
 // reactstrap components
 import { Card, CardBody, CardTitle, Container, Row, Col } from "reactstrap";
 
 const Header = ({ showStats = true }) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check screen size on mount and resize
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   return (
     <>
-      <div className="header bg-gradient-info py-2" style={{ minHeight: '78px' }}>
+      <div className={`header py-2 ${!isMobile ? 'bg-gradient-info' : ''}`} style={{ minHeight: isMobile ? '0px' : '78px' }}>
         <Container fluid>
           <div className="header-body">
             {/* Card stats */}
