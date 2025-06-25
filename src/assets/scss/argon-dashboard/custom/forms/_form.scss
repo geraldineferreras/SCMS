@@ -25,8 +25,8 @@
 }
 
 .form-control:focus, .input-group .form-control:focus {
-  border-color: #3297d3 !important;
-  box-shadow: 0 0 0 3px rgba(50, 151, 211, 0.25), 0 0 8px 2px #3297d3 !important;
+  border: 2px solid #90c6fd !important;
+  box-shadow: 0 0 6px 2px #90c6fd55 !important;
   outline: none !important;
 }
 

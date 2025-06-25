@@ -75,6 +75,7 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [previewImage, setPreviewImage] = useState(null); // { src: string, type: 'cover' | 'avatar' }
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   // Check screen size on mount and resize
   useEffect(() => {
@@ -883,10 +884,10 @@ const UserManagement = () => {
                 <Col md="12" className="pl-3 pr-3">
                   {/* Search bar in a single row with space to the right */}
                   <div className="d-flex align-items-center mb-2" style={{ width: '100%' }}>
-                    <InputGroup style={{ width: '100%', marginBottom: '6px' }}>
+                    <InputGroup className={isSearchFocused ? 'focused' : ''} style={{ width: '100%', marginBottom: '6px' }}>
                       <InputGroupAddon addonType="prepend">
                         <InputGroupText>
-                          <i className="ni ni-zoom-split-in" />
+                          <i className="fas fa-search" />
                         </InputGroupText>
                       </InputGroupAddon>
                       <Input
@@ -895,6 +896,8 @@ const UserManagement = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{ minWidth: 0 }}
+                        onFocus={() => setIsSearchFocused(true)}
+                        onBlur={() => setIsSearchFocused(false)}
                       />
                     </InputGroup>
                   </div>
