@@ -347,6 +347,13 @@ const AddStudentsModal = ({
   );
 };
 
+// Add robust hover effect style
+const sectionRowHoverStyle = `
+  table tr.section-table-row.section-row-hover:hover, .section-row-hover.section-block-card:hover {
+    background: #f6f9fc !important;
+    transition: background 0.15s;
+  }
+`;
 
 const SectionManagement = () => {
   const [activeTab, setActiveTab] = useState("bsit");
@@ -360,6 +367,8 @@ const SectionManagement = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddStudentsModal, setShowAddStudentsModal] = useState(false);
+  const [showStudentsModal, setShowStudentsModal] = useState(false);
+  const [studentsModalSection, setStudentsModalSection] = useState(null);
   
   const [sectionToEdit, setSectionToEdit] = useState(null);
   const [sectionToDelete, setSectionToDelete] = useState(null);
@@ -369,6 +378,8 @@ const SectionManagement = () => {
   const [yearLevel, setYearLevel] = useState("");
   const [adviser, setAdviser] = useState("");
   const [maxStudents, setMaxStudents] = useState(40);
+
+  const [expandedSectionId, setExpandedSectionId] = useState(null);
 
   const courses = [
     { id: "bsit", abbr: "BSIT", name: "Bachelor of Science in Information Technology" },
@@ -462,6 +473,9 @@ const SectionManagement = () => {
         maxStudents: maxStudents,
       };
       setSections([...sections, newSection]);
+      setActiveTab(newSection.course);
+      setSelectedYear('all');
+      setSearchTerm("");
 
       const studentIdsForSection = selectedStudentsForSection.map(s => s.id);
       const updatedStudents = students.map(stud => 
@@ -522,24 +536,28 @@ const SectionManagement = () => {
       </thead>
       <tbody>
         {sectionsToRender.map((section) => {
-          const currentStudents = getStudentsForSection(section.id).length;
+          const currentStudents = getStudentsForSection(section.id);
           const adviserName = teachers.find(t => t.id === section.adviserId)?.name || 'N/A';
-          const ratio = currentStudents / section.maxStudents;
+          const ratio = currentStudents.length / section.maxStudents;
           let statusBadge;
           if (ratio >= 1) statusBadge = <Badge color="danger">Full</Badge>;
           else if (ratio >= 0.8) statusBadge = <Badge color="warning">Almost Full</Badge>;
           else statusBadge = <Badge color="success">Available</Badge>;
-          
           return (
-            <tr key={section.id}>
+            <tr
+              key={section.id}
+              className="section-table-row section-row-hover"
+              style={{ cursor: 'pointer' }}
+              onClick={() => { console.log('Row clicked', section); setStudentsModalSection(section); setShowStudentsModal(true); }}
+            >
               <td>{section.name}</td>
               <td>{section.year}</td>
               <td>{adviserName}</td>
-              <td>{currentStudents} / {section.maxStudents}</td>
+              <td>{currentStudents.length} / {section.maxStudents}</td>
               <td>{statusBadge}</td>
               <td>
-                <Button color="primary" size="sm" onClick={() => handleOpenEditModal(section)}>Edit</Button>
-                <Button color="danger" size="sm" onClick={() => handleDeleteSection(section)}>Delete</Button>
+                <Button color="primary" size="sm" onClick={e => { e.stopPropagation(); handleOpenEditModal(section); }}>Edit</Button>
+                <Button color="danger" size="sm" onClick={e => { e.stopPropagation(); handleDeleteSection(section); }}>Delete</Button>
               </td>
             </tr>
           );
@@ -555,7 +573,8 @@ const SectionManagement = () => {
          const adviserName = teachers.find(t => t.id === section.adviserId)?.name || 'N/A';
          return (
           <Col key={section.id} lg="4" md="6" sm="12" className="mb-4">
-            <Card className="shadow-sm h-100">
+            <Card className="shadow-sm h-100 section-row-hover section-block-card" style={{ cursor: 'pointer' }}
+              onClick={() => { console.log('Row clicked', section); setStudentsModalSection(section); setShowStudentsModal(true); }}>
               <CardBody className="d-flex flex-column">
                 <div className="d-flex justify-content-between align-items-start">
                   <h5 className="card-title mb-0">{section.name}</h5>
@@ -565,8 +584,8 @@ const SectionManagement = () => {
                   <span>Students: {currentStudents} / {section.maxStudents}</span>
                 </div>
                 <div className="mt-auto pt-3">
-                  <Button color="primary" size="sm" onClick={() => handleOpenEditModal(section)}>Edit</Button>
-                  <Button color="danger" size="sm" onClick={() => handleDeleteSection(section)}>Delete</Button>
+                  <Button color="primary" size="sm" onClick={e => { e.stopPropagation(); handleOpenEditModal(section); }}>Edit</Button>
+                  <Button color="danger" size="sm" onClick={e => { e.stopPropagation(); handleDeleteSection(section); }}>Delete</Button>
                 </div>
               </CardBody>
             </Card>
@@ -576,9 +595,66 @@ const SectionManagement = () => {
     </Row>
   );
 
+  // Modal for showing students in a section
+  const renderStudentsModal = () => {
+    if (!showStudentsModal || !studentsModalSection) return null;
+    const studentsInSection = getStudentsForSection(studentsModalSection.id);
+    return (
+      <Modal isOpen={showStudentsModal} toggle={() => setShowStudentsModal(false)} centered>
+        <ModalHeader toggle={() => setShowStudentsModal(false)}>
+          Students in {studentsModalSection.name}
+        </ModalHeader>
+        <ModalBody>
+          {studentsInSection.length === 0 ? (
+            <div className="text-muted">No students assigned to this section.</div>
+          ) : (
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+              {studentsInSection.map(student => (
+                <li key={student.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                  <img src={getAvatarForStudent(student)} alt={student.name} style={{ width: 28, height: 28, borderRadius: '50%', marginRight: 10, objectFit: 'cover' }} />
+                  <span style={{ fontWeight: 500 }}>{student.name}</span>
+                  <span style={{ color: '#888', fontSize: 12, marginLeft: 8 }}>{student.email}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ModalBody>
+      </Modal>
+    );
+  };
+
+  // On mount, check localStorage for a new section and add it if present
+  useEffect(() => {
+    const stored = localStorage.getItem('newSection');
+    if (stored) {
+      const newSection = JSON.parse(stored);
+      // Generate a new id
+      const newSectionId = Math.max(0, ...sections.map(s => s.id)) + 1;
+      setSections(prev => [
+        ...prev,
+        {
+          id: newSectionId,
+          name: newSection.name,
+          course: newSection.course,
+          year: newSection.year,
+          adviserId: newSection.adviser,
+          maxStudents: newSection.maxStudents || 40,
+          academicYear: newSection.academicYear,
+          semester: newSection.semester,
+        }
+      ]);
+      // Optionally, you could also add students to the section here if needed
+      localStorage.removeItem('newSection');
+      setActiveTab(newSection.course);
+      setSelectedYear('all');
+      setSearchTerm("");
+    }
+  }, []);
+
   return (
     <>
       <Header compact />
+      <style>{sectionRowHoverStyle}</style>
       <Container className="mt-4" fluid>
         <Card className="shadow">
           <div className="p-4 border-bottom">
@@ -658,6 +734,7 @@ const SectionManagement = () => {
         </Card>
       </Container>
       
+      {renderStudentsModal()}
       <Modal isOpen={showAddEditModal} toggle={() => setShowAddEditModal(false)} centered>
         <ModalHeader toggle={() => setShowAddEditModal(false)}>{isEditMode ? "Edit Section" : "Add New Section"}</ModalHeader>
         <ModalBody>

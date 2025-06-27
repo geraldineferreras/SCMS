@@ -35,10 +35,18 @@ import {
   Pagination,
   PaginationItem,
   PaginationLink,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  UncontrolledDropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
 } from "reactstrap";
 import classnames from "classnames";
 import Header from "components/Headers/Header.js";
 import { useNavigate } from "react-router-dom";
+import userDefault from "../../assets/img/theme/user-default.svg";
 
 // Mock Data - Replace with your actual data fetching logic
 const getMockData = () => ({
@@ -61,9 +69,41 @@ const getMockData = () => ({
     { id: "bscs", abbr: "BSCS", name: "Computer Science" },
     { id: "bsis", abbr: "BSIS", name: "Info Systems" },
     { id: "act", abbr: "ACT", name: "Computer Technology" },
+  ],
+  students: [
+    { id: 1, sectionId: 1, name: "John Doe", email: "2021305901@dhvsu.edu.ph", status: "active" },
+    { id: 2, sectionId: 1, name: "Jane Smith", email: "2021305902@dhvsu.edu.ph", status: "active" },
+    { id: 3, sectionId: 1, name: "Mike Johnson", email: "2021305903@dhvsu.edu.ph", status: "active" },
+    { id: 4, sectionId: 2, name: "Sarah Wilson", email: "2021305904@dhvsu.edu.ph", status: "active" },
+    { id: 5, sectionId: 2, name: "David Brown", email: "2021305905@dhvsu.edu.ph", status: "active" },
+    { id: 6, sectionId: 3, name: "Emily Davis", email: "2021305906@dhvsu.edu.ph", status: "active" },
+    { id: 7, sectionId: 4, name: "Robert Miller", email: "2021305907@dhvsu.edu.ph", status: "active" },
+    { id: 8, sectionId: 4, name: "Lisa Garcia", email: "2021305908@dhvsu.edu.ph", status: "active" },
+    { id: 9, sectionId: 4, name: "Chris Lee", email: "2021305909@dhvsu.edu.ph", status: "active" },
+    { id: 10, sectionId: 5, name: "Karen White", email: "2021305910@dhvsu.edu.ph", status: "active" },
+    { id: 11, sectionId: 5, name: "Alex Thompson", email: "2021305911@dhvsu.edu.ph", status: "active" },
+    { id: 12, sectionId: 5, name: "Emma Davis", email: "2021305912@dhvsu.edu.ph", status: "active" },
+    { id: 13, sectionId: 6, name: "James Wilson", email: "2021305913@dhvsu.edu.ph", status: "active" },
+    { id: 14, sectionId: 6, name: "Sophia Turner", email: "2021305914@dhvsu.edu.ph", status: "active" },
+    { id: 15, sectionId: 6, name: "Daniel Kim", email: "2021305915@dhvsu.edu.ph", status: "active" },
   ]
 });
 
+// Helper function to generate consistent avatars for students
+const getAvatarForStudent = (student) => {
+  if (student && student.id) {
+    const avatarUrls = [
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face",
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
+    ];
+    const index = student.id % avatarUrls.length;
+    return avatarUrls[index];
+  }
+  return userDefault;
+};
 
 const SectionManagement = () => {
   const [sections, setSections] = useState([]);
@@ -78,10 +118,14 @@ const SectionManagement = () => {
   
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
   
-  const { sections: mockSections, teachers, courses } = useMemo(() => getMockData(), []);
+  const { sections: mockSections, teachers, courses, students } = useMemo(() => getMockData(), []);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Student modal state
+  const [showStudentsModal, setShowStudentsModal] = useState(false);
+  const [studentsModalSection, setStudentsModalSection] = useState(null);
 
   const navigate = useNavigate();
 
@@ -96,6 +140,42 @@ const SectionManagement = () => {
     
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  // Initialize sections with mock data
+  useEffect(() => {
+    setSections(mockSections);
+  }, [mockSections]);
+
+  // On mount, check localStorage for a new section and add it if present
+  useEffect(() => {
+    const stored = localStorage.getItem('newSection');
+    if (stored) {
+      const newSection = JSON.parse(stored);
+      // Generate a new id
+      const newSectionId = Math.max(0, ...mockSections.map(s => s.id)) + 1;
+      const updatedSections = [
+        ...mockSections,
+        {
+          id: newSectionId,
+          name: newSection.name,
+          course: newSection.course,
+          year: newSection.year,
+          adviserId: newSection.adviser,
+          enrolled: 0,
+          ay: newSection.academicYear || '2024-2025',
+          semester: newSection.semester || '1st Semester',
+        }
+      ];
+      // Update the sections state
+      setSections(updatedSections);
+      // Clear localStorage
+      localStorage.removeItem('newSection');
+      // Switch to the correct tab and reset filters
+      setActiveCourseTab(newSection.course);
+      setActiveYear(0);
+      setSearchTerm("");
+    }
+  }, [mockSections]);
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -113,7 +193,7 @@ const SectionManagement = () => {
   };
 
   const filteredAndSortedSections = useMemo(() => {
-    let filtered = mockSections
+    let filtered = sections
       .filter(section => section.course === activeCourseTab)
       .filter(section => activeYear === 0 || section.year === ["All Years", "1st Year", "2nd Year", "3rd Year", "4th Year"][activeYear])
       .filter(section => section.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -131,7 +211,7 @@ const SectionManagement = () => {
     }
 
     return filtered;
-  }, [mockSections, activeCourseTab, activeYear, searchTerm, sortConfig]);
+  }, [sections, activeCourseTab, activeYear, searchTerm, sortConfig]);
 
   // Calculate pagination info
   const totalItems = filteredAndSortedSections.length;
@@ -148,7 +228,270 @@ const SectionManagement = () => {
     setCurrentPage(1);
   };
 
+  // Helper function to get students in a section
+  const getStudentsForSection = (sectionId) => students.filter(student => student.sectionId === sectionId);
+
+  // Modal for showing students in a section
+  const renderStudentsModal = () => {
+    if (!showStudentsModal || !studentsModalSection) return null;
+    const studentsInSection = getStudentsForSection(studentsModalSection.id);
+    const adviser = teachers.find(t => t.id === studentsModalSection.adviserId);
+    
+    return (
+      <Modal isOpen={showStudentsModal} toggle={() => setShowStudentsModal(false)} centered size="lg">
+        <ModalHeader 
+          toggle={() => setShowStudentsModal(false)}
+          style={{
+            background: '#eaf4fb',
+            color: '#22336b',
+            borderBottom: 'none',
+            borderRadius: '0.375rem 0.375rem 0 0'
+          }}
+        >
+          <div className="d-flex align-items-center">
+            <div className="mr-3">
+              <i className="ni ni-bullet-list-67" style={{ fontSize: '1.5rem', color: '#22336b' }} />
+            </div>
+            <div>
+              <h5 className="mb-0 font-weight-bold" style={{ color: '#22336b' }}>{studentsModalSection.name}</h5>
+              <small style={{ opacity: 0.9, color: '#22336b' }}>
+                {studentsModalSection.year} • {studentsModalSection.ay} • {studentsModalSection.semester}
+              </small>
+            </div>
+          </div>
+        </ModalHeader>
+        <ModalBody style={{ padding: '1.5rem' }}>
+          {/* Section Info Card */}
+          <div className="bg-light rounded-lg p-3 mb-4" style={{ background: '#fff', border: 'none', boxShadow: '0 1px 4px rgba(34,51,107,0.04)' }}>
+            <div className="row">
+              <div className="col-md-6">
+                <div className="d-flex align-items-center mb-2">
+                  <i className="ni ni-single-02 mr-2" style={{ color: '#4066b5', fontSize: '1.2rem' }} />
+                  <span className="font-weight-bold" style={{ color: '#425466' }}>Adviser:</span>
+                  <span className="ml-2" style={{ color: '#425466' }}>{adviser?.name || 'N/A'}</span>
+                </div>
+                <div className="d-flex align-items-center">
+                  <i className="ni ni-email-83 mr-2" style={{ color: '#4a6fa5', fontSize: '1.2rem' }} />
+                  <span className="font-weight-bold" style={{ color: '#425466' }}>Email:</span>
+                  <span className="ml-2" style={{ color: '#425466' }}>{adviser?.email || 'N/A'}</span>
+                </div>
+              </div>
+              <div className="col-md-6 text-md-right">
+                <div className="d-flex align-items-center justify-content-md-end mb-2">
+                  <i className="ni ni-badge mr-2" style={{ color: '#4066b5', fontSize: '1.2rem' }} />
+                  <span className="font-weight-bold" style={{ color: '#425466' }}>Students:</span>
+                  <span className="ml-2 badge badge-pill" style={{ background: '#eaf4fb', color: '#4066b5', fontWeight: 700, fontSize: '1rem', padding: '0.3em 0.9em' }}>
+                    {studentsInSection.length}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Students List */}
+          <div>
+            <h6 className="text-uppercase text-muted font-weight-bold mb-2" style={{ fontSize: '0.95rem' }}>
+              <i className="ni ni-single-02 mr-2" style={{ fontSize: '1rem' }} />
+              Student List ({studentsInSection.length})
+            </h6>
+            
+            {studentsInSection.length === 0 ? (
+              <div className="text-center py-4">
+                <div className="mb-2">
+                  <i className="ni ni-single-02" style={{ fontSize: '2rem', color: '#dee2e6' }} />
+                </div>
+                <div className="text-muted small mb-0" style={{ fontSize: '0.95rem' }}>
+                  No Students Assigned
+                </div>
+              </div>
+            ) : (
+              <div className="student-list-container" style={{ maxHeight: '260px', overflowY: 'auto', padding: '0 2px' }}>
+                {studentsInSection.map((student, index) => (
+                  <div 
+                    key={student.id} 
+                    className="student-item d-flex align-items-center mb-1 rounded-lg"
+                    style={{
+                      background: '#f8f9fa',
+                      border: '1px solid #e9ecef',
+                      padding: '6px 10px',
+                      minHeight: 38,
+                      fontSize: '0.97rem',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#e3f2fd';
+                      e.currentTarget.style.borderColor = '#5e72e4';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#f8f9fa';
+                      e.currentTarget.style.borderColor = '#e9ecef';
+                    }}
+                  >
+                    <div className="position-relative mr-2">
+                      <img 
+                        src={getAvatarForStudent(student)} 
+                        alt={student.name} 
+                        style={{ 
+                          width: 28, 
+                          height: 28, 
+                          borderRadius: '50%', 
+                          objectFit: 'cover',
+                          border: '1px solid #fff',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.07)'
+                        }} 
+                      />
+                    </div>
+                    <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                      <div className="d-flex align-items-center" style={{ fontSize: '0.97rem', fontWeight: 500, color: '#425466', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {student.name}
+                        <span className="badge badge-primary badge-pill ml-2" style={{ fontSize: '0.65rem', fontWeight: 400 }}>Active</span>
+                      </div>
+                      <div className="d-flex align-items-center" style={{ fontSize: '0.85rem', color: '#7b8a9b' }}>
+                        <i className="ni ni-email-83 mr-1 text-muted" style={{ fontSize: '0.8rem' }} />
+                        <span className="text-muted small" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{student.email}</span>
+                        <span style={{ marginLeft: 8, color: '#b0b7c3', fontSize: '0.8rem' }}>ID: {student.id.toString().padStart(4, '0')}</span>
+                      </div>
+                    </div>
+                    <div className="text-right ml-2">
+                      <span className="text-muted small">#{index + 1}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </ModalBody>
+      </Modal>
+    );
+  };
+
   const currentCourseName = courses.find(c => c.id === activeCourseTab)?.name || "Sections";
+
+  // Block view for sections
+  const renderBlockView = () => (
+    <Row className="px-3">
+      {paginatedSections.map((section, idx) => {
+        const adviser = teachers.find(t => t.id === section.adviserId);
+        // Calculate if this is the first, middle, or last block in a row (3 per row)
+        const isFirstInRow = idx % 3 === 0;
+        const isMiddleInRow = (idx + 1) % 3 === 2;
+        const isLastInRow = (idx + 1) % 3 === 0 || idx === paginatedSections.length - 1;
+        
+        return (
+          <Col key={section.id} lg="4" md="6" sm="12" className="mb-3">
+            <Card
+              className="shadow-sm position-relative"
+              style={{
+                cursor: 'pointer',
+                border: '1.5px solid #e3eaf3',
+                borderRadius: 16,
+                background: '#fff',
+                boxShadow: '0 2px 12px 0 rgba(64,102,181,0.06)',
+                transition: 'box-shadow 0.2s, border-color 0.2s',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.boxShadow = '0 6px 24px 0 rgba(64,102,181,0.13)';
+                e.currentTarget.style.borderColor = '#b5c6d6';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = '0 2px 12px 0 rgba(64,102,181,0.06)';
+                e.currentTarget.style.borderColor = '#e3eaf3';
+              }}
+              onClick={() => {
+                setStudentsModalSection(section);
+                setShowStudentsModal(true);
+              }}
+            >
+              {/* Block Header */}
+              <div style={{ background: '#eaf4fb', borderRadius: '12px 12px 0 0', padding: '12px 18px 8px 18px', minHeight: 54, display: 'flex', alignItems: 'flex-start', position: 'relative' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', flex: 1 }}>
+                  <i className="ni ni-bullet-list-67" style={{ color: '#22336b', fontSize: '1.05rem', marginTop: 2, marginRight: 10, minWidth: 18, textAlign: 'center' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                    <span className="font-weight-bold" style={{ color: '#22336b', fontSize: '0.81rem', lineHeight: 1.1 }}>{section.name}</span>
+                    <span className="text-muted" style={{ color: '#22336b', fontSize: '0.69rem', marginTop: 2 }}>{section.year} • {section.ay} • {section.semester}</span>
+                  </div>
+                </div>
+                {/* Three-dot menu */}
+                <div style={{ position: 'absolute', top: 10, right: 14, zIndex: 2 }} onClick={e => e.stopPropagation()}>
+                  <UncontrolledDropdown>
+                    <DropdownToggle
+                      color="link"
+                      size="sm"
+                      className="text-muted p-0 section-block-menu-toggle"
+                      style={{ border: 'none', background: 'transparent', fontSize: '1.15rem', lineHeight: 1, borderRadius: '50%', transition: 'background 0.15s' }}
+                      aria-label="Actions"
+                    >
+                      <i className="fa fa-ellipsis-h" />
+                    </DropdownToggle>
+                    <DropdownMenu right>
+                      <DropdownItem
+                        onClick={() => handleEditSection(section)}
+                        className="d-flex align-items-center"
+                      >
+                        <i className="ni ni-settings-gear-65 mr-2"></i>
+                        Edit Section
+                      </DropdownItem>
+                      <DropdownItem
+                        onClick={() => handleDeleteSection(section)}
+                        className="d-flex align-items-center text-danger"
+                      >
+                        <i className="fa fa-trash mr-2"></i>
+                        Delete Section
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </UncontrolledDropdown>
+                </div>
+              </div>
+              {/* Card Body */}
+              <CardBody className="p-3" style={{ background: '#fff', borderRadius: '0 0 12px 12px' }}>
+                <div className="mb-2 d-flex align-items-center" style={{gap: 10, marginLeft: 6, marginTop: 15}}>
+                  <img src={adviser?.avatar} alt={adviser?.name} className="avatar avatar-sm rounded-circle" style={{width: 32, height: 32, objectFit: 'cover'}} />
+                  <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                    <span className="font-weight-bold" style={{ color: '#425466', fontSize: '0.89rem', lineHeight: 1.1 }}>{adviser?.name || 'No Adviser'}</span>
+                    <span className="text-muted" style={{ color: '#8b98a9', fontSize: '0.77rem', marginTop: 2 }}>{adviser?.email || 'No Email'}</span>
+                  </div>
+                </div>
+                <div className="mb-2" style={{marginLeft: 6, marginTop: 8}}>
+                  <span className="d-block" style={{ color: '#425466', fontSize: '0.93rem' }}>
+                    <i className="ni ni-badge mr-1" style={{ color: '#4066B5' }}></i>
+                    <span className="font-weight-bold">Students:</span>
+                    <span className="font-weight-bold ml-1">{section.enrolled}</span>
+                  </span>
+                </div>
+                {/* Three-dot menu with hover effect */}
+                <style>{`
+                  .section-block-menu-toggle:hover {
+                    background: #d6e6fa !important;
+                    border-radius: 50% !important;
+                    cursor: pointer !important;
+                    transition: background 0.18s;
+                  }
+                  .section-block-menu-toggle:hover i.fa-ellipsis-h {
+                    color: #4066B5 !important;
+                  }
+                `}</style>
+              </CardBody>
+            </Card>
+          </Col>
+        );
+      })}
+    </Row>
+  );
+
+  // Add these handlers to fix ESLint errors
+  function handleEditSection(section) {
+    // TODO: Implement edit logic
+    console.log('Edit section:', section);
+  }
+
+  function handleDeleteSection(section) {
+    // TODO: Implement delete logic
+    console.log('Delete section:', section);
+  }
 
   return (
     <>
@@ -300,7 +643,15 @@ const SectionManagement = () => {
                         {paginatedSections.map(section => {
                           const adviser = teachers.find(t => t.id === section.adviserId);
                           return (
-                            <tr key={section.id}>
+                            <tr 
+                              key={section.id}
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => {
+                                console.log('Row clicked', section);
+                                setStudentsModalSection(section);
+                                setShowStudentsModal(true);
+                              }}
+                            >
                               <td>{section.name}</td>
                               <td>{section.year}</td>
                               <td>
@@ -431,12 +782,13 @@ const SectionManagement = () => {
                     </div>
                   </>
                 )}
+                {viewMode === 'block' && renderBlockView()}
               </div>
-              {/* Block View (if needed) can be added here */}
             </Card>
           </div>
         </Row>
       </Container>
+      {renderStudentsModal()}
     </>
   );
 };
