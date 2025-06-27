@@ -266,4 +266,29 @@
     white-space: normal;
     word-break: break-all;
   }
+}
+
+select.form-control-alternative {
+  background-position: right 1.1rem center !important;
+  background-repeat: no-repeat !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23b5b5c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-chevron-down'%3E%3Cpolyline points='6 9 9 12 12 9'/%3E%3C/svg%3E") !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+}
+select.form-control-alternative::-ms-expand {
+  display: none;
+}
+select.form-control-alternative:hover,
+input.form-control-alternative:hover {
+  background-color: #f6fbff !important;
+  border: 1.5px solid #c7e3fa !important;
+  box-shadow: 0 0 4px 1.5px rgba(142, 202, 255, 0.10) !important;
+  transition: background 0.18s, box-shadow 0.18s, border 0.18s;
+}
+select.form-control-alternative:focus,
+input.form-control-alternative:focus {
+  border: 1.5px solid #8ecaff !important;
+  box-shadow: 0 0 10px 3px rgba(142, 202, 255, 0.28) !important;
+  background-color: #fff !important;
 } 
