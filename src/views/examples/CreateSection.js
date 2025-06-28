@@ -169,7 +169,6 @@ const CreateSection = () => {
   const [studentModal, setStudentModal] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [isStudentSearchFocused, setIsStudentSearchFocused] = useState(false);
-  const [isAdviserHovered, setIsAdviserHovered] = useState(false);
   const navigate = useNavigate();
   const adviserInputRef = useRef();
 
@@ -187,6 +186,13 @@ const CreateSection = () => {
     setTimeout(() => {
       setIsSubmitting(false);
       setShowSuccess(true);
+      
+      // Get the selected adviser details
+      const selectedAdviser = userManagementUsers.find(u => u.id === adviser);
+      
+      // Get the selected students details
+      const selectedStudentDetails = userManagementStudents.filter(s => selectedStudents.includes(s.id));
+      
       // Save new section to localStorage for SectionManagement to pick up
       const newSection = {
         name: sectionName,
@@ -194,11 +200,15 @@ const CreateSection = () => {
         year: yearLevel,
         academicYear,
         semester,
-        adviser,
+        adviser: adviser,
+        adviserDetails: selectedAdviser, // Save full adviser details
         maxStudents: 40,
         students: selectedStudents,
+        studentDetails: selectedStudentDetails, // Save full student details
+        enrolled: selectedStudents.length, // Save the actual count
       };
       localStorage.setItem('newSection', JSON.stringify(newSection));
+      
       setTimeout(() => {
         setShowSuccess(false);
         navigate("/admin/section-management");
@@ -320,14 +330,21 @@ const CreateSection = () => {
           transition: background 0.18s, box-shadow 0.18s, border 0.18s;
         }
         select.form-control-alternative:focus,
-        input.form-control-alternative:focus {
+        .react-select__control--is-focused,
+        .react-select__control--is-focused:hover {
           border: 1.5px solid #8ecaff !important;
+          background: #fff !important;
           box-shadow: 0 0 10px 3px rgba(142, 202, 255, 0.28) !important;
-          background-color: #fff !important;
         }
         .react-select__control {
           border: 1.5px solid #e9ecef !important;
           background: #fff !important;
+          transition: border-color .15s, box-shadow .15s, background .18s;
+        }
+        .react-select__control:hover {
+          border: 1.5px solid #c7e3fa !important;
+          background: #f6fbff !important;
+          box-shadow: 0 2px 6px rgba(50,50,93,0.11), 0 1.5px 0 rgba(0,0,0,0.04) !important;
           transition: border-color .15s, box-shadow .15s, background .18s;
         }
         .react-select__control--is-focused {
@@ -445,8 +462,6 @@ const CreateSection = () => {
                           <label className="form-control-label" htmlFor="adviser">Adviser</label>
                           <div
                             title="Select Adviser"
-                            onMouseEnter={() => setIsAdviserHovered(true)}
-                            onMouseLeave={() => setIsAdviserHovered(false)}
                           >
                             <Select
                               id="adviser"
@@ -469,23 +484,13 @@ const CreateSection = () => {
                                   minHeight: 44,
                                   height: 44,
                                   borderRadius: 8,
-                                  borderColor: state.isFocused
-                                    ? '#8ecaff'
-                                    : isAdviserHovered
-                                      ? '#c7e3fa'
-                                      : '#e9ecef',
-                                  borderWidth: '1.5px',
-                                  borderStyle: 'solid',
+                                  border: state.isFocused
+                                    ? '1.5px solid #8ecaff'
+                                    : '1.5px solid #e9ecef',
                                   boxShadow: state.isFocused
                                     ? '0 0 10px 3px rgba(142, 202, 255, 0.28)'
-                                    : isAdviserHovered
-                                      ? '0 0 4px 1.5px rgba(142, 202, 255, 0.10)'
-                                      : '0 2px 6px rgba(50,50,93,.11), 0 1.5px 0 rgba(0,0,0,.04)',
-                                  backgroundColor: state.isFocused
-                                    ? '#fff'
-                                    : isAdviserHovered
-                                      ? '#f6fbff'
-                                      : '#fff',
+                                    : '0 2px 6px rgba(50,50,93,.11), 0 1.5px 0 rgba(0,0,0,.04)',
+                                  backgroundColor: '#fff',
                                   fontSize: '1rem',
                                   fontWeight: 400,
                                   color: '#8898aa',
@@ -552,31 +557,11 @@ const CreateSection = () => {
                                   color: state.isFocused ? '#e74c3c' : '#b0b7c3',
                                   transition: 'color 0.15s',
                                 }),
-                                Control: (props) => {
-                                  return (
-                                    <components.Control
-                                      {...props}
-                                      title="Select Adviser"
-                                      onMouseEnter={() => setIsAdviserHovered(true)}
-                                      onMouseLeave={() => setIsAdviserHovered(false)}
-                                    />
-                                  );
-                                },
                               }}
                               components={{
                                 Option: AdviserOption,
                                 SingleValue: AdviserSingleValue,
                                 DropdownIndicator: CustomDropdownIndicator,
-                                Control: (props) => {
-                                  return (
-                                    <components.Control
-                                      {...props}
-                                      title="Select Adviser"
-                                      onMouseEnter={() => setIsAdviserHovered(true)}
-                                      onMouseLeave={() => setIsAdviserHovered(false)}
-                                    />
-                                  );
-                                },
                               }}
                               title="Select Adviser"
                             />

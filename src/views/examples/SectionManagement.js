@@ -153,21 +153,37 @@ const SectionManagement = () => {
       const newSection = JSON.parse(stored);
       // Generate a new id
       const newSectionId = Math.max(0, ...mockSections.map(s => s.id)) + 1;
-      const updatedSections = [
-        ...mockSections,
-        {
-          id: newSectionId,
-          name: newSection.name,
-          course: newSection.course,
-          year: newSection.year,
-          adviserId: newSection.adviser,
-          enrolled: 0,
-          ay: newSection.academicYear || '2024-2025',
-          semester: newSection.semester || '1st Semester',
-        }
-      ];
-      // Update the sections state
+      
+      // Create the section with all the details
+      const sectionToAdd = {
+        id: newSectionId,
+        name: newSection.name,
+        course: newSection.course,
+        year: newSection.year,
+        adviserId: newSection.adviser,
+        adviserDetails: newSection.adviserDetails, // Save adviser details
+        enrolled: newSection.enrolled || newSection.students?.length || 0,
+        ay: newSection.academicYear || '2024-2025',
+        semester: newSection.semester || '1st Semester',
+        studentIds: newSection.students || [], // Save student IDs
+        studentDetails: newSection.studentDetails || [], // Save full student details
+      };
+      
+      // Add the new section to the sections array
+      const updatedSections = [...mockSections, sectionToAdd];
       setSections(updatedSections);
+      
+      // Also add the students to the students array if they don't exist
+      if (newSection.studentDetails && newSection.studentDetails.length > 0) {
+        const newStudents = newSection.studentDetails.map((student, index) => ({
+          ...student,
+          sectionId: newSectionId,
+          status: "active"
+        }));
+        // Note: In a real app, you'd update the students state here
+        // For now, we'll use the studentDetails stored in the section
+      }
+      
       // Clear localStorage
       localStorage.removeItem('newSection');
       // Switch to the correct tab and reset filters
@@ -229,13 +245,27 @@ const SectionManagement = () => {
   };
 
   // Helper function to get students in a section
-  const getStudentsForSection = (sectionId) => students.filter(student => student.sectionId === sectionId);
+  const getStudentsForSection = (sectionId) => {
+    const section = sections.find(s => s.id === sectionId);
+    if (section && section.studentDetails) {
+      // Return the actual selected students from the section
+      return section.studentDetails.map((student, index) => ({
+        ...student,
+        id: student.id || index + 1,
+        sectionId: sectionId,
+        status: "active"
+      }));
+    }
+    // Fallback to the original method for existing sections
+    return students.filter(student => student.sectionId === sectionId);
+  };
 
   // Modal for showing students in a section
   const renderStudentsModal = () => {
     if (!showStudentsModal || !studentsModalSection) return null;
     const studentsInSection = getStudentsForSection(studentsModalSection.id);
-    const adviser = teachers.find(t => t.id === studentsModalSection.adviserId);
+    // Use adviser details from section if available, otherwise fallback to teachers array
+    const adviser = studentsModalSection.adviserDetails || teachers.find(t => t.id === studentsModalSection.adviserId);
     
     return (
       <Modal isOpen={showStudentsModal} toggle={() => setShowStudentsModal(false)} centered size="lg">
@@ -372,7 +402,8 @@ const SectionManagement = () => {
   const renderBlockView = () => (
     <Row className="px-3">
       {paginatedSections.map((section, idx) => {
-        const adviser = teachers.find(t => t.id === section.adviserId);
+        // Use adviser details from section if available, otherwise fallback to teachers array
+        const adviser = section.adviserDetails || teachers.find(t => t.id === section.adviserId);
         // Calculate if this is the first, middle, or last block in a row (3 per row)
         const isFirstInRow = idx % 3 === 0;
         const isMiddleInRow = (idx + 1) % 3 === 2;
@@ -641,7 +672,8 @@ const SectionManagement = () => {
                       </thead>
                       <tbody>
                         {paginatedSections.map(section => {
-                          const adviser = teachers.find(t => t.id === section.adviserId);
+                          // Use adviser details from section if available, otherwise fallback to teachers array
+                          const adviser = section.adviserDetails || teachers.find(t => t.id === section.adviserId);
                           return (
                             <tr 
                               key={section.id}
