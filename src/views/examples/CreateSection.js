@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Button,
   Card,
@@ -10,7 +10,6 @@ import {
   Row,
   Col,
   Container,
-  Label,
   Modal,
   ModalBody,
   ModalHeader,
@@ -62,17 +61,17 @@ const avatarImages = [
   require("../../assets/img/theme/team-4-800x800.jpg"),
   require("../../assets/img/theme/vue.jpg")
 ];
-const mockStudents = studentNames.map((name, idx) => {
-  const id = idx + 1;
-  // Use a unique avatar for each student, cycle if more students than images
-  const avatar = avatarImages[idx % avatarImages.length];
-  return {
-    id,
-    name,
-    email: `20213059${id.toString().padStart(2, '0')}@dhvsu.edu.ph`,
-    avatar
-  };
-});
+// const mockStudents = studentNames.map((name, idx) => {
+//   const id = idx + 1;
+//   // Use a unique avatar for each student, cycle if more students than images
+//   const avatar = avatarImages[idx % avatarImages.length];
+//   return {
+//     id,
+//     name,
+//     email: `20213059${id.toString().padStart(2, '0')}@dhvsu.edu.ph`,
+//     avatar
+//   };
+// });
 
 // Add avatar URLs to userManagementUsers
 const teacherAvatars = [
@@ -164,13 +163,43 @@ const CreateSection = () => {
   const [semester, setSemester] = useState("");
   const [adviser, setAdviser] = useState("");
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [studentModal, setStudentModal] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [isStudentSearchFocused, setIsStudentSearchFocused] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingSectionId, setEditingSectionId] = useState(null);
+  
+  // Loading and success modal state
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  
   const navigate = useNavigate();
   const adviserInputRef = useRef();
+
+  // Check if we're editing an existing section
+  useEffect(() => {
+    const sectionToEdit = localStorage.getItem('sectionToEdit');
+    if (sectionToEdit) {
+      const sectionData = JSON.parse(sectionToEdit);
+      
+      // Set editing mode
+      setIsEditing(true);
+      setEditingSectionId(sectionData.id);
+      
+      // Populate form fields with existing data
+      setCourse(sectionData.course);
+      setSectionName(sectionData.name);
+      setYearLevel(sectionData.year);
+      setAcademicYear(sectionData.ay);
+      setSemester(sectionData.semester);
+      setAdviser(sectionData.adviserId);
+      setSelectedStudents(sectionData.studentIds || []);
+      
+      // Clear the localStorage after populating
+      localStorage.removeItem('sectionToEdit');
+    }
+  }, []);
 
   const handleStudentCheck = (id) => {
     setSelectedStudents((prev) =>
@@ -182,10 +211,10 @@ const CreateSection = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setShowLoadingModal(true);
+    
     setTimeout(() => {
-      setIsSubmitting(false);
-      setShowSuccess(true);
+      setShowLoadingModal(false);
       
       // Get the selected adviser details
       const selectedAdviser = userManagementUsers.find(u => u.id === adviser);
@@ -193,27 +222,50 @@ const CreateSection = () => {
       // Get the selected students details
       const selectedStudentDetails = userManagementStudents.filter(s => selectedStudents.includes(s.id));
       
-      // Save new section to localStorage for SectionManagement to pick up
-      const newSection = {
-        name: sectionName,
-        course,
-        year: yearLevel,
-        academicYear,
-        semester,
-        adviser: adviser,
-        adviserDetails: selectedAdviser, // Save full adviser details
-        maxStudents: 40,
-        students: selectedStudents,
-        studentDetails: selectedStudentDetails, // Save full student details
-        enrolled: selectedStudents.length, // Save the actual count
-      };
-      localStorage.setItem('newSection', JSON.stringify(newSection));
+      if (isEditing) {
+        // Update existing section
+        const updatedSection = {
+          id: editingSectionId,
+          name: sectionName,
+          course,
+          year: yearLevel,
+          academicYear,
+          semester,
+          adviser: adviser,
+          adviserDetails: selectedAdviser,
+          maxStudents: 40,
+          students: selectedStudents,
+          studentDetails: selectedStudentDetails,
+          enrolled: selectedStudents.length,
+        };
+        localStorage.setItem('updatedSection', JSON.stringify(updatedSection));
+        setSuccessMessage(`Section ${sectionName} has been updated successfully!`);
+      } else {
+        // Create new section
+        const newSection = {
+          name: sectionName,
+          course,
+          year: yearLevel,
+          academicYear,
+          semester,
+          adviser: adviser,
+          adviserDetails: selectedAdviser,
+          maxStudents: 40,
+          students: selectedStudents,
+          studentDetails: selectedStudentDetails,
+          enrolled: selectedStudents.length,
+        };
+        localStorage.setItem('newSection', JSON.stringify(newSection));
+        setSuccessMessage(`Section ${sectionName} has been created successfully!`);
+      }
+      
+      setShowSuccessModal(true);
       
       setTimeout(() => {
-        setShowSuccess(false);
+        setShowSuccessModal(false);
         navigate("/admin/section-management");
-      }, 2000);
-    }, 1200);
+      }, 3000);
+    }, 2500);
   };
 
   const filteredStudents = userManagementStudents.filter(
@@ -352,367 +404,425 @@ const CreateSection = () => {
           background: #fff !important;
           box-shadow: 0 0 10px 3px rgba(142, 202, 255, 0.28) !important;
         }
+        .custom-modal-overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1050;
+        }
+        .custom-modal-content {
+          background: #fff;
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(44,62,80,.12);
+          width: 100%;
+          max-width: 540px;
+          padding: 0;
+          position: relative;
+          z-index: 1060;
+        }
+        .custom-modal-backdrop {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(44, 62, 80, 0.12);
+          z-index: 1040;
+        }
+        input[type="checkbox"]:checked {
+          accent-color: #2563eb;
+        }
       `}</style>
       <Header showStats={false} />
       <Container className="mt-4" fluid>
-        <Row>
-          <Col className="order-xl-1 mx-auto" xl="8" lg="8" md="10">
-            <Card className="bg-secondary shadow border-0 mt-5">
-              <CardHeader className="bg-white border-0">
-                <Row className="align-items-center">
-                  <Col xs="8">
-                    <h3 className="mb-0">Create New Section</h3>
-                  </Col>
-                </Row>
-              </CardHeader>
-              <CardBody>
-                <Form onSubmit={handleSubmit}>
-                  <h6 className="heading-small text-muted mb-4">Section Information</h6>
-                  <div className="pl-lg-4">
-                    <Row>
-                      <Col lg="6">
-                        <FormGroup>
-                          <label className="form-control-label" htmlFor="course">Course</label>
-                          <Input
-                            type="select"
-                            className="form-control-alternative"
-                            id="course"
-                            value={course}
-                            onChange={e => setCourse(e.target.value)}
-                            required
-                          >
-                            <option value="">Select Course</option>
-                            {courseOptions.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                          </Input>
-                        </FormGroup>
-                      </Col>
-                      <Col lg="6">
-                        <FormGroup>
-                          <label className="form-control-label" htmlFor="yearLevel">Year Level</label>
-                          <Input
-                            type="select"
-                            className="form-control-alternative"
-                            id="yearLevel"
-                            value={yearLevel}
-                            onChange={e => setYearLevel(e.target.value)}
-                            required
-                          >
-                            <option value="">Select Year Level</option>
-                            <option value="1st Year">1st Year</option>
-                            <option value="2nd Year">2nd Year</option>
-                            <option value="3rd Year">3rd Year</option>
-                            <option value="4th Year">4th Year</option>
-                          </Input>
-                        </FormGroup>
-                      </Col>
-                    </Row>
-                    <Row>
-                      <Col lg="6">
-                        <FormGroup>
-                          <label className="form-control-label" htmlFor="sectionName">Section Name</label>
-                          <Input
-                            className="form-control-alternative"
-                            type="text"
-                            id="sectionName"
-                            value={sectionName}
-                            onChange={e => setSectionName(e.target.value)}
-                            required
-                          />
-                        </FormGroup>
-                      </Col>
-                      <Col lg="6">
-                        <FormGroup>
-                          <label className="form-control-label" htmlFor="academicYear">Academic Year</label>
-                          <Input
-                            className="form-control-alternative"
-                            type="text"
-                            id="academicYear"
-                            value={academicYear}
-                            onChange={e => setAcademicYear(e.target.value)}
-                            placeholder="e.g. 2024-2025"
-                            required
-                          />
-                        </FormGroup>
-                      </Col>
-                    </Row>
-                    <Row>
-                      <Col lg="6">
-                        <FormGroup>
-                          <label className="form-control-label" htmlFor="semester">Semester</label>
-                          <Input
-                            type="select"
-                            className="form-control-alternative"
-                            id="semester"
-                            value={semester}
-                            onChange={e => setSemester(e.target.value)}
-                            required
-                            title="Select Semester"
-                          >
-                            <option value="">Select Semester</option>
-                            {semesterOptions.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                          </Input>
-                        </FormGroup>
-                      </Col>
-                      <Col lg="6">
-                        <FormGroup>
-                          <label className="form-control-label" htmlFor="adviser">Adviser</label>
-                          <div
-                            title="Select Adviser"
-                          >
-                            <Select
-                              id="adviser"
-                              classNamePrefix="react-select"
-                              options={adviserOptions}
-                              value={adviserOptions.find(opt => String(opt.value) === String(adviser)) || null}
-                              onChange={opt => {
-                                setAdviser(opt ? opt.value : '');
-                                // Blur the select after choosing an option
-                                if (adviserInputRef.current) {
-                                  adviserInputRef.current.blur();
-                                }
-                              }}
-                              isClearable
-                              isSearchable={false}
-                              placeholder="Select Adviser..."
-                              styles={{
-                                control: (base, state) => ({
-                                  ...base,
-                                  minHeight: 44,
-                                  height: 44,
-                                  borderRadius: 8,
-                                  border: state.isFocused
-                                    ? '1.5px solid #8ecaff'
-                                    : '1.5px solid #e9ecef',
-                                  boxShadow: state.isFocused
-                                    ? '0 0 10px 3px rgba(142, 202, 255, 0.28)'
-                                    : '0 2px 6px rgba(50,50,93,.11), 0 1.5px 0 rgba(0,0,0,.04)',
-                                  backgroundColor: '#fff',
-                                  fontSize: '1rem',
-                                  fontWeight: 400,
-                                  color: '#8898aa',
-                                  paddingLeft: 16,
-                                  paddingRight: 56,
-                                  fontFamily: 'inherit',
-                                  transition: 'border-color .15s ease-in-out,box-shadow .15s ease-in-out,background 0.18s',
-                                  outline: 'none',
-                                  appearance: 'none',
-                                  position: 'relative',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                }),
-                                valueContainer: (base) => ({
-                                  ...base,
-                                  padding: 0,
-                                  paddingLeft: 0,
-                                  height: '100%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                }),
-                                input: (base) => ({
-                                  ...base,
-                                  margin: 0,
-                                  padding: 0,
-                                }),
-                                menu: (base) => ({ ...base, zIndex: 9999, borderRadius: 8, marginTop: 2 }),
-                                menuList: (base) => ({ ...base, maxHeight: 160, paddingTop: 0, paddingBottom: 0 }),
-                                option: (base, state) => ({
-                                  ...base,
-                                  backgroundColor: state.isSelected ? '#eaf4fb' : state.isFocused ? '#f6f9fc' : '#fff',
-                                  color: '#222',
-                                  fontWeight: 400,
-                                  fontSize: '0.89rem',
-                                  padding: '8px 12px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                }),
-                                singleValue: (base) => ({
-                                  ...base,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  color: '#8898aa',
-                                  height: '100%',
-                                }),
-                                placeholder: (base) => ({ ...base, color: '#8898aa', fontSize: '0.90rem', fontWeight: 400 }),
-                                indicatorSeparator: () => ({ display: 'none' }),
-                                dropdownIndicator: (base) => ({
-                                  ...base,
-                                  color: '#b5b5c3',
-                                  padding: 0,
-                                  width: 12,
-                                  height: 44,
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  display: 'flex',
-                                  position: 'absolute',
-                                  right: 20,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                }),
-                                clearIndicator: (base, state) => ({
-                                  ...base,
-                                  color: state.isFocused ? '#e74c3c' : '#b0b7c3',
-                                  transition: 'color 0.15s',
-                                }),
-                              }}
-                              components={{
-                                Option: AdviserOption,
-                                SingleValue: AdviserSingleValue,
-                                DropdownIndicator: CustomDropdownIndicator,
-                              }}
-                              title="Select Adviser"
+        <div className="main-content-wrapper" style={{ position: 'relative' }}>
+          <Row>
+            <Col className="order-xl-1 mx-auto" xl="8" lg="8" md="10">
+              <Card className="bg-secondary shadow border-0 mt-5">
+                <CardHeader className="bg-white border-0">
+                  <Row className="align-items-center">
+                    <Col xs="8">
+                      <h3 className="mb-0">{isEditing ? 'Edit Section' : 'Create New Section'}</h3>
+                    </Col>
+                  </Row>
+                </CardHeader>
+                <CardBody>
+                  <Form onSubmit={handleSubmit}>
+                    <h6 className="heading-small text-muted mb-4">Section Information</h6>
+                    <div className="pl-lg-4">
+                      <Row>
+                        <Col lg="6">
+                          <FormGroup>
+                            <label className="form-control-label" htmlFor="course">Course</label>
+                            <Input
+                              type="select"
+                              className="form-control-alternative"
+                              id="course"
+                              value={course}
+                              onChange={e => setCourse(e.target.value)}
+                              required
+                            >
+                              <option value="">Select Course</option>
+                              {courseOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </Input>
+                          </FormGroup>
+                        </Col>
+                        <Col lg="6">
+                          <FormGroup>
+                            <label className="form-control-label" htmlFor="yearLevel">Year Level</label>
+                            <Input
+                              type="select"
+                              className="form-control-alternative"
+                              id="yearLevel"
+                              value={yearLevel}
+                              onChange={e => setYearLevel(e.target.value)}
+                              required
+                            >
+                              <option value="">Select Year Level</option>
+                              <option value="1st Year">1st Year</option>
+                              <option value="2nd Year">2nd Year</option>
+                              <option value="3rd Year">3rd Year</option>
+                              <option value="4th Year">4th Year</option>
+                            </Input>
+                          </FormGroup>
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col lg="6">
+                          <FormGroup>
+                            <label className="form-control-label" htmlFor="sectionName">Section Name</label>
+                            <Input
+                              type="text"
+                              className="form-control-alternative"
+                              id="sectionName"
+                              value={sectionName}
+                              onChange={e => setSectionName(e.target.value)}
+                              required
+                              placeholder="e.g. BSIT 3A"
                             />
-                          </div>
-                        </FormGroup>
-                      </Col>
-                    </Row>
-                    {/* Students Row */}
-                    <Row className="align-items-center mb-3">
-                      <Col xs="8">
-                        <h6 className="heading-small text-muted mb-0">Students ({selectedStudents.length})</h6>
-                      </Col>
-                      <Col xs="4" className="text-right">
-                        <Button color="primary" size="sm" onClick={() => setStudentModal(true)}>
-                          Add Students
-                        </Button>
-                      </Col>
-                    </Row>
-                    {/* Show selected students as pills */}
-                    <Row className="mb-3">
-                      <Col>
-                        <div style={{ minHeight: 70, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: selectedStudents.length === 0 ? 'center' : 'flex-start', justifyContent: 'center', background: '#f7f8fa', borderRadius: 8, padding: 8, border: '1px solid #e9ecef' }}>
-                          {selectedStudents.length === 0 ? (
-                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#b0b7c3', fontSize: 11, minHeight: 30 }}>
-                              <FaUser size={14} style={{ marginBottom: 2 }} />
-                              <div style={{ fontSize: 11, fontWeight: 500 }}>No students selected</div>
+                          </FormGroup>
+                        </Col>
+                        <Col lg="6">
+                          <FormGroup>
+                            <label className="form-control-label" htmlFor="academicYear">Academic Year</label>
+                            <Input
+                              className="form-control-alternative"
+                              type="text"
+                              id="academicYear"
+                              value={academicYear}
+                              onChange={e => setAcademicYear(e.target.value)}
+                              placeholder="e.g. 2024-2025"
+                              required
+                            />
+                          </FormGroup>
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col lg="6">
+                          <FormGroup>
+                            <label className="form-control-label" htmlFor="semester">Semester</label>
+                            <Input
+                              type="select"
+                              className="form-control-alternative"
+                              id="semester"
+                              value={semester}
+                              onChange={e => setSemester(e.target.value)}
+                              required
+                              title="Select Semester"
+                            >
+                              <option value="">Select Semester</option>
+                              {semesterOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </Input>
+                          </FormGroup>
+                        </Col>
+                        <Col lg="6">
+                          <FormGroup>
+                            <label className="form-control-label" htmlFor="adviser">Adviser</label>
+                            <div
+                              title="Select Adviser"
+                            >
+                              <Select
+                                classNamePrefix="react-select"
+                                options={adviserOptions}
+                                value={adviserOptions.find(opt => String(opt.value) === String(adviser)) || null}
+                                onChange={opt => {
+                                  setAdviser(opt ? opt.value : '');
+                                  if (adviserInputRef.current) {
+                                    adviserInputRef.current.blur();
+                                  }
+                                }}
+                                isClearable
+                                isSearchable={true}
+                                placeholder="Select Adviser..."
+                                styles={{
+                                  control: (base, state) => ({
+                                    ...base,
+                                    minHeight: 44,
+                                    height: 44,
+                                    borderRadius: 8,
+                                    border: state.isFocused
+                                      ? '1.5px solid #8ecaff'
+                                      : '1.5px solid #e9ecef',
+                                    boxShadow: state.isFocused
+                                      ? '0 0 10px 3px rgba(142, 202, 255, 0.28)'
+                                      : '0 2px 6px rgba(50,50,93,.11), 0 1.5px 0 rgba(0,0,0,.04)',
+                                    backgroundColor: '#fff',
+                                    fontSize: '1rem',
+                                    fontWeight: 400,
+                                    color: '#8898aa',
+                                    paddingLeft: 12,
+                                    paddingRight: 56,
+                                    fontFamily: 'inherit',
+                                    transition: 'border-color .15s ease-in-out,box-shadow .15s ease-in-out,background 0.18s',
+                                    outline: 'none',
+                                    appearance: 'none',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                  }),
+                                  valueContainer: (base) => ({
+                                    ...base,
+                                    padding: 0,
+                                    paddingLeft: 0,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                  }),
+                                  placeholder: (base) => ({
+                                    ...base,
+                                    marginLeft: 0.25,
+                                    color: '#8898aa',
+                                    fontSize: '0.90rem',
+                                    fontWeight: 400,
+                                  }),
+                                  menu: (base) => ({ ...base, zIndex: 9999, borderRadius: 8, marginTop: 2 }),
+                                  menuList: (base) => ({ ...base, maxHeight: 160, paddingTop: 0, paddingBottom: 0 }),
+                                  option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isSelected ? '#eaf4fb' : state.isFocused ? '#f6f9fc' : '#fff',
+                                    color: '#222',
+                                    fontWeight: 400,
+                                    fontSize: '0.89rem',
+                                    padding: '8px 12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                  }),
+                                  singleValue: (base) => ({
+                                    ...base,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    color: '#8898aa',
+                                    height: '100%',
+                                  }),
+                                  indicatorSeparator: () => ({ display: 'none' }),
+                                  dropdownIndicator: (base) => ({
+                                    ...base,
+                                    color: '#b5b5c3',
+                                    padding: 0,
+                                    width: 12,
+                                    height: 44,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    display: 'flex',
+                                    position: 'absolute',
+                                    right: 20,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                  }),
+                                  clearIndicator: (base, state) => ({
+                                    ...base,
+                                    color: state.isFocused ? '#e74c3c' : '#b0b7c3',
+                                    transition: 'color 0.15s',
+                                  }),
+                                }}
+                                components={{
+                                  Option: AdviserOption,
+                                  SingleValue: AdviserSingleValue,
+                                  DropdownIndicator: CustomDropdownIndicator,
+                                }}
+                                title="Select Adviser"
+                              />
                             </div>
-                          ) : (
-                            selectedStudents.map(id => {
-                              const s = userManagementStudents.find(stu => stu.id === id);
-                              return s ? (
-                                <span key={id} className="student-pill" style={{ display: 'flex', alignItems: 'center', background: '#e0e3ea', borderRadius: 10, padding: '0 4px 0 1px', fontSize: 9, fontWeight: 500 }}>
-                                  <img src={s.avatar} alt={s.name} style={{ width: 13, height: 13, borderRadius: '50%', marginRight: 3, objectFit: 'cover', border: '1px solid #fff' }} />
-                                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.1 }}>
-                                    <span style={{ fontWeight: 700, fontSize: 9 }}>{s.name}</span>
-                                    <span style={{ color: '#888', fontWeight: 400, fontSize: 8 }}>{s.email}</span>
+                          </FormGroup>
+                        </Col>
+                      </Row>
+                      {/* Students Row */}
+                      <Row className="align-items-center mb-3">
+                        <Col xs="8">
+                          <h6 className="heading-small text-muted mb-0">Students ({selectedStudents.length})</h6>
+                        </Col>
+                        <Col xs="4" className="text-right">
+                          <Button color="primary" size="sm" onClick={() => setStudentModal(true)}>
+                            Add Students
+                          </Button>
+                        </Col>
+                      </Row>
+                      {/* Show selected students as pills */}
+                      <Row className="mb-3">
+                        <Col>
+                          <div style={{ minHeight: 70, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: selectedStudents.length === 0 ? 'center' : 'flex-start', justifyContent: 'center', background: '#f7f8fa', borderRadius: 8, padding: 8, border: '1px solid #e9ecef' }}>
+                            {selectedStudents.length === 0 ? (
+                              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#b0b7c3', fontSize: 11, minHeight: 30 }}>
+                                <FaUser size={14} style={{ marginBottom: 2 }} />
+                                <div style={{ fontSize: 11, fontWeight: 500 }}>No students selected</div>
+                              </div>
+                            ) : (
+                              selectedStudents.map(id => {
+                                const s = userManagementStudents.find(stu => stu.id === id);
+                                return s ? (
+                                  <span key={id} className="student-pill" style={{ display: 'flex', alignItems: 'center', background: '#e0e3ea', borderRadius: 10, padding: '0 4px 0 1px', fontSize: 9, fontWeight: 500 }}>
+                                    <img src={s.avatar} alt={s.name} style={{ width: 13, height: 13, borderRadius: '50%', marginRight: 3, objectFit: 'cover', border: '1px solid #fff' }} />
+                                    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.1 }}>
+                                      <span style={{ fontWeight: 700, fontSize: 9 }}>{s.name}</span>
+                                      <span style={{ color: '#888', fontWeight: 400, fontSize: 8 }}>{s.email}</span>
+                                    </span>
+                                    <FaTimes className="student-pill-x" style={{ marginLeft: 8, cursor: 'pointer', color: '#5e72e4', fontSize: 10 }} onClick={() => removeStudent(id)} />
                                   </span>
-                                  <FaTimes className="student-pill-x" style={{ marginLeft: 8, cursor: 'pointer', color: '#5e72e4', fontSize: 10 }} onClick={() => removeStudent(id)} />
-                                </span>
-                              ) : null;
-                            })
-                          )}
-                        </div>
-                      </Col>
-                    </Row>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
-                    <Button color="primary" type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? "Saving..." : "Create Section"}
-                    </Button>
-                  </div>
-                  {showSuccess && (
-                    <div className="alert alert-success mt-3 mb-0 text-center">
-                      Section created successfully!
+                                ) : null;
+                              })
+                            )}
+                          </div>
+                        </Col>
+                      </Row>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
+                      <Button color="primary" type="submit">
+                        {isEditing ? "Update Section" : "Create Section"}
+                      </Button>
+                    </div>
+                  </Form>
+                  {/* Student Modal (custom centered) */}
+                  {studentModal && (
+                    <div className="custom-modal-overlay">
+                      <div className="custom-modal-backdrop" onClick={() => setStudentModal(false)} />
+                      <div className="custom-modal-content" onClick={e => e.stopPropagation()}>
+                        <ModalHeader toggle={() => setStudentModal(false)} style={{ border: 'none', paddingBottom: 0, fontWeight: 700, fontSize: 18, background: 'transparent' }}>
+                          Add Students to Section
+                        </ModalHeader>
+                        <ModalBody style={{ padding: 0 }}>
+                          <div style={{ padding: 24, paddingTop: 12 }}>
+                            <InputGroup className={isStudentSearchFocused ? 'focused' : ''} style={{ width: '100%', marginBottom: 18 }}>
+                              <InputGroupAddon addonType="prepend">
+                                <InputGroupText>
+                                  <i className="fas fa-search" />
+                                </InputGroupText>
+                              </InputGroupAddon>
+                              <Input
+                                className="custom-focus-effect"
+                                placeholder="Search students..."
+                                value={studentSearch}
+                                onChange={e => setStudentSearch(e.target.value)}
+                                style={{ minWidth: 0 }}
+                                onFocus={() => setIsStudentSearchFocused(true)}
+                                onBlur={() => setIsStudentSearchFocused(false)}
+                              />
+                            </InputGroup>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                              <span style={{ fontWeight: 600, color: '#222', fontSize: 12 }}>
+                                Students ({selectedStudents.length})
+                              </span>
+                              {selectedStudents.length > 0 && (
+                                <button className="unselect-all-btn" type="button" onClick={() => setSelectedStudents([])}>
+                                  Unselect All
+                                </button>
+                              )}
+                            </div>
+                            <div style={{ maxHeight: 320, overflowY: 'auto', border: 'none', borderRadius: 12, background: '#f9fafd', padding: '0 16px 0 0', marginBottom: 8 }}>
+                              {filteredStudents.length === 0 ? (
+                                <div className="text-center text-muted py-5">No students found</div>
+                              ) : (
+                                filteredStudents.map((s) => (
+                                  <div
+                                    key={s.id}
+                                    className={`student-list-row${selectedStudents.includes(s.id) ? ' selected' : ''}`}
+                                    onClick={() => handleStudentCheck(s.id)}
+                                    style={{ display: 'flex', alignItems: 'center', padding: '6px 10px' }}
+                                  >
+                                    <img
+                                      src={s.avatar}
+                                      alt={s.name}
+                                      style={{ width: 28, height: 28, borderRadius: '50%', marginRight: 10, objectFit: 'cover', border: '1px solid #e9ecef' }}
+                                    />
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontWeight: 700, fontSize: '0.90rem', color: '#425466' }}>{s.name}</div>
+                                      <div style={{ fontSize: '0.78rem', color: '#7b8a9b' }}>{s.email}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedStudents.includes(s.id)}
+                                        onChange={() => handleStudentCheck(s.id)}
+                                        style={{ accentColor: '#2563eb', width: 18, height: 18, cursor: 'pointer' }}
+                                        onClick={e => e.stopPropagation()}
+                                      />
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                            {/* Selected students pills in modal */}
+                            <div style={{ minHeight: 50, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: selectedStudents.length === 0 ? 'center' : 'flex-start', justifyContent: 'center', background: '#f7f8fa', borderRadius: 8, padding: 8, border: '1px solid #e9ecef', marginTop: 12 }}>
+                              {selectedStudents.length === 0 ? (
+                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#b0b7c3', fontSize: 11, minHeight: 30 }}>
+                                  <FaUser size={14} style={{ marginBottom: 2 }} />
+                                  <div style={{ fontSize: 11, fontWeight: 500 }}>No students selected</div>
+                                </div>
+                              ) : (
+                                selectedStudents.map(id => {
+                                  const s = userManagementStudents.find(stu => stu.id === id);
+                                  return s ? (
+                                    <span key={id} className="student-pill" style={{ display: 'flex', alignItems: 'center', background: '#e0e3ea', borderRadius: 10, padding: '0 4px 0 1px', fontSize: 9, fontWeight: 500 }}>
+                                      <img src={s.avatar} alt={s.name} style={{ width: 13, height: 13, borderRadius: '50%', marginRight: 3, objectFit: 'cover', border: '1px solid #fff' }} />
+                                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.1 }}>
+                                        <span style={{ fontWeight: 700, fontSize: 9 }}>{s.name}</span>
+                                        <span style={{ color: '#888', fontWeight: 400, fontSize: 8 }}>{s.email}</span>
+                                      </span>
+                                      <FaTimes className="student-pill-x" style={{ marginLeft: 8, cursor: 'pointer', color: '#5e72e4', fontSize: 10 }} onClick={() => removeStudent(id)} />
+                                    </span>
+                                  ) : null;
+                                })
+                              )}
+                            </div>
+                          </div>
+                        </ModalBody>
+                      </div>
                     </div>
                   )}
-                </Form>
-                {/* Student Modal */}
-                <Modal isOpen={studentModal} toggle={() => setStudentModal(false)} size="md" centered style={{ borderRadius: 20 }} contentClassName="border-0">
-                  <div style={{ borderRadius: 20, background: '#fff', padding: 0, boxShadow: '0 8px 32px rgba(44,62,80,.12)' }}>
-                    <ModalHeader toggle={() => setStudentModal(false)} style={{ border: 'none', paddingBottom: 0, fontWeight: 700, fontSize: 18, background: 'transparent' }}>
-                      Add Students to Section
-                    </ModalHeader>
-                    <ModalBody style={{ padding: 0 }}>
-                      <div style={{ padding: 24, paddingTop: 12 }}>
-                        <InputGroup className={isStudentSearchFocused ? 'focused' : ''} style={{ width: '100%', marginBottom: 18 }}>
-                          <InputGroupAddon addonType="prepend">
-                            <InputGroupText>
-                              <i className="fas fa-search" />
-                            </InputGroupText>
-                          </InputGroupAddon>
-                          <Input
-                            className="custom-focus-effect"
-                            placeholder="Search students..."
-                            value={studentSearch}
-                            onChange={e => setStudentSearch(e.target.value)}
-                            style={{ minWidth: 0 }}
-                            onFocus={() => setIsStudentSearchFocused(true)}
-                            onBlur={() => setIsStudentSearchFocused(false)}
-                          />
-                        </InputGroup>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                          <span style={{ fontWeight: 600, color: '#222', fontSize: 12 }}>
-                            Students ({selectedStudents.length})
-                          </span>
-                          {selectedStudents.length > 0 && (
-                            <button className="unselect-all-btn" type="button" onClick={() => setSelectedStudents([])}>
-                              Unselect All
-                            </button>
-                          )}
-                        </div>
-                        <div style={{ maxHeight: 320, overflowY: 'auto', border: 'none', borderRadius: 12, background: '#f9fafd', padding: '0 16px 0 0', marginBottom: 8 }}>
-                          {filteredStudents.length === 0 ? (
-                            <div className="text-center text-muted py-5">No students found</div>
-                          ) : (
-                            filteredStudents.map((s) => (
-                              <div
-                                key={s.id}
-                                className={`student-list-row${selectedStudents.includes(s.id) ? ' selected' : ''}`}
-                                onClick={() => handleStudentCheck(s.id)}
-                                style={{ display: 'flex', alignItems: 'center', padding: '6px 10px' }}
-                              >
-                                <img
-                                  src={s.avatar}
-                                  alt={s.name}
-                                  style={{ width: 28, height: 28, borderRadius: '50%', marginRight: 10, objectFit: 'cover', border: '1px solid #e9ecef' }}
-                                />
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: 500, fontSize: '0.97rem', color: '#425466' }}>{s.name}</div>
-                                  <div style={{ fontSize: '0.85rem', color: '#7b8a9b' }}>{s.email}</div>
-                                </div>
-                                <div>
-                                  {selectedStudents.includes(s.id) ? (
-                                    <FaCheck color="#5e72e4" size={16} />
-                                  ) : null}
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                        {/* Selected students pills in modal */}
-                        <div style={{ minHeight: 50, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: selectedStudents.length === 0 ? 'center' : 'flex-start', justifyContent: 'center', background: '#f7f8fa', borderRadius: 8, padding: 8, border: '1px solid #e9ecef', marginTop: 12 }}>
-                          {selectedStudents.length === 0 ? (
-                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#b0b7c3', fontSize: 11, minHeight: 30 }}>
-                              <FaUser size={14} style={{ marginBottom: 2 }} />
-                              <div style={{ fontSize: 11, fontWeight: 500 }}>No students selected</div>
-                            </div>
-                          ) : (
-                            selectedStudents.map(id => {
-                              const s = userManagementStudents.find(stu => stu.id === id);
-                              return s ? (
-                                <span key={id} className="student-pill" style={{ display: 'flex', alignItems: 'center', background: '#e0e3ea', borderRadius: 10, padding: '0 4px 0 1px', fontSize: 9, fontWeight: 500 }}>
-                                  <img src={s.avatar} alt={s.name} style={{ width: 13, height: 13, borderRadius: '50%', marginRight: 3, objectFit: 'cover', border: '1px solid #fff' }} />
-                                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.1 }}>
-                                    <span style={{ fontWeight: 700, fontSize: 9 }}>{s.name}</span>
-                                    <span style={{ color: '#888', fontWeight: 400, fontSize: 8 }}>{s.email}</span>
-                                  </span>
-                                  <FaTimes className="student-pill-x" style={{ marginLeft: 8, cursor: 'pointer', color: '#5e72e4', fontSize: 10 }} onClick={() => removeStudent(id)} />
-                                </span>
-                              ) : null;
-                            })
-                          )}
-                        </div>
-                      </div>
-                    </ModalBody>
+                </CardBody>
+              </Card>
+              
+              {/* Loading Modal */}
+              <Modal isOpen={showLoadingModal} centered backdrop="static" keyboard={false}>
+                <ModalBody className="text-center py-4">
+                  <div className="mb-3">
+                    <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                      <span className="sr-only">Loading...</span>
+                    </div>
                   </div>
-                </Modal>
-              </CardBody>
-            </Card>
-          </Col>
-        </Row>
+                  <h5 className="text-primary mb-2">
+                    {isEditing ? 'Updating Section...' : 'Creating Section...'}
+                  </h5>
+                  <p className="text-muted mb-0">Please wait while we process your request.</p>
+                </ModalBody>
+              </Modal>
+
+              {/* Success Modal */}
+              <Modal isOpen={showSuccessModal} centered backdrop="static" keyboard={false}>
+                <ModalBody className="text-center">
+                  <div className="mb-3">
+                    <div className="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '4rem', height: '4rem' }}>
+                      <i className="ni ni-check-bold text-white" style={{ fontSize: '2rem' }}></i>
+                    </div>
+                  </div>
+                  <h5>{successMessage}</h5>
+                </ModalBody>
+              </Modal>
+            </Col>
+          </Row>
+        </div>
       </Container>
     </>
   );

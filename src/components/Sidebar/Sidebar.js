@@ -17,7 +17,7 @@
 */
 /*eslint-disable*/
 import React, { useState } from "react";
-import { Link, NavLink as NavLinkRRD } from "react-router-dom";
+import { Link, NavLink as NavLinkRRD, useLocation } from "react-router-dom";
 // nodejs library to set properties for components
 import { PropTypes } from "prop-types";
 
@@ -57,6 +57,9 @@ var ps;
 const Sidebar = (props) => {
   const [collapseOpen, setCollapseOpen] = useState();
   const [isSidebarSearchFocused, setIsSidebarSearchFocused] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const location = props.location || window.location;
+
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
     return props.location.pathname.indexOf(routeName) > -1 ? "active" : "";
@@ -71,20 +74,116 @@ const Sidebar = (props) => {
   };
   // creates the links that appear in the left menu / Sidebar
   const createLinks = (routes) => {
-    return routes.map((prop, key) => {
-      return (
-        <NavItem key={key}>
-          <NavLink
-            to={prop.layout + prop.path}
-            tag={NavLinkRRD}
-            onClick={closeCollapse}
-          >
-            <i className={prop.icon} />
-            {prop.name}
-          </NavLink>
-        </NavItem>
-      );
-    });
+    return routes
+      .filter(prop => !prop.hidden)
+      .map((prop, key) => {
+        // Collapsible Reports & Logs section
+        if (prop.path === "/reports-and-logs") {
+          // Only active if a sub-route is active
+          const subRoutes = [
+            "/admin/reports-and-logs/attendance",
+            "/admin/reports-and-logs/grades",
+            "/admin/reports-and-logs/audit"
+          ];
+          const isActive = subRoutes.includes(location.pathname);
+
+          return (
+            <div key={key}>
+              <NavItem>
+                <button
+                  className={`nav-link d-flex align-items-center${isActive ? " active" : ""}`}
+                  style={{ 
+                    padding: "0.75rem 1rem", 
+                    fontWeight: 400, 
+                    color: isActive ? "#fb6340" : "#525f7f", 
+                    fontSize: "1rem", 
+                    marginLeft: '8px', 
+                    position: 'relative',
+                    background: 'none',
+                    border: 'none',
+                    width: '100%',
+                    textAlign: 'left',
+                    cursor: 'pointer'
+                  }}
+                  onClick={e => { e.preventDefault(); setReportsOpen(!reportsOpen); }}
+                >
+                  <i className="ni ni-single-copy-04" style={{ marginRight: 8, fontSize: 18, position: 'relative', top: '-2px', verticalAlign: 'middle', color: '#fb6340' }} />
+                  Reports & Logs
+                  <i className={`fa fa-chevron-${reportsOpen ? "down" : "right"}`} style={{ position: 'absolute', right: -8, fontSize: 13, color: "#8898aa" }} />
+                </button>
+              </NavItem>
+              {reportsOpen && (
+                <div style={{ marginLeft: 32 }}>
+                  <NavItem>
+                    <NavLink
+                      to="/admin/reports-and-logs/attendance"
+                      tag={NavLinkRRD}
+                      className={location.pathname.startsWith("/admin/reports-and-logs/attendance") ? "active" : ""}
+                      style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        padding: "0.5rem 1rem", 
+                        fontSize: "0.97rem",
+                        color: location.pathname.startsWith("/admin/reports-and-logs/attendance") ? "#fb6340" : "#525f7f"
+                      }}
+                      onClick={closeCollapse}
+                    >
+                      <i className="ni ni-calendar-grid-58 mr-2" /> Attendance Log
+                    </NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink
+                      to="/admin/reports-and-logs/grades"
+                      tag={NavLinkRRD}
+                      className={location.pathname.startsWith("/admin/reports-and-logs/grades") ? "active" : ""}
+                      style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        padding: "0.5rem 1rem", 
+                        fontSize: "0.97rem",
+                        color: location.pathname.startsWith("/admin/reports-and-logs/grades") ? "#fb6340" : "#525f7f"
+                      }}
+                      onClick={closeCollapse}
+                    >
+                      <i className="ni ni-hat-3 mr-2" /> Grades Log
+                    </NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink
+                      to="/admin/reports-and-logs/audit"
+                      tag={NavLinkRRD}
+                      className={location.pathname.startsWith("/admin/reports-and-logs/audit") ? "active" : ""}
+                      style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        padding: "0.5rem 1rem", 
+                        fontSize: "0.97rem",
+                        color: location.pathname.startsWith("/admin/reports-and-logs/audit") ? "#fb6340" : "#525f7f"
+                      }}
+                      onClick={closeCollapse}
+                    >
+                      <i className="ni ni-archive-2 mr-2" /> Audit Log
+                    </NavLink>
+                  </NavItem>
+                </div>
+              )}
+            </div>
+          );
+        }
+        
+        return (
+          <NavItem key={key}>
+            <NavLink
+              to={prop.layout + prop.path}
+              tag={NavLinkRRD}
+              onClick={closeCollapse}
+            >
+              <i className={prop.icon} style={{ marginRight: 8, fontSize: 18, position: 'relative', top: '-2px', verticalAlign: 'middle' }} />
+              {prop.name}
+            </NavLink>
+          </NavItem>
+        );
+      });
   };
 
   const { bgColor, routes, logo } = props;

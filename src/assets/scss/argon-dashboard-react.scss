@@ -91,3 +91,26 @@
 .custom-checkbox .custom-control-input:checked ~ .custom-control-label::after {
   display: none;
 }
+
+// Custom: Remove unwanted focus/active highlight in sidebar
+.navbar-vertical .nav-link:focus,
+.navbar-vertical .nav-link:active {
+  background: none !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+// Custom: Remove focus styles from Reports & Logs button
+.navbar-vertical .nav-item button.nav-link:focus,
+.navbar-vertical .nav-item button.nav-link:active {
+  background: none !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+// Only show active state when truly active
+.navbar-vertical .nav-item button.nav-link.active {
+  background: rgba(251, 99, 64, 0.1) !important;
+  color: #fb6340 !important;
+}

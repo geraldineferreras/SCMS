@@ -611,83 +611,89 @@ const UserManagement = () => {
         <Row className="px-3">
           {getPaginatedUsers(users).map((user) => (
             <Col key={user.id} lg="4" md="6" sm="12" className="mb-3">
-              <Card className="shadow-sm position-relative">
-                <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 2 }} onClick={e => e.stopPropagation()}>
-                  <UncontrolledDropdown>
-                    <DropdownToggle
-                      color="link"
-                      size="sm"
-                      className="text-muted p-0 user-block-menu-toggle"
-                      style={{ border: 'none', background: 'transparent', fontSize: '1.15rem', lineHeight: 1, borderRadius: '50%', transition: 'background 0.15s' }}
-                      aria-label="Actions"
-                    >
-                      <i className="fa fa-ellipsis-h" />
-                    </DropdownToggle>
-                    <DropdownMenu right>
-                      <DropdownItem
-                        onClick={() => navigate(`/admin/edit-user/${user.id}?tab=${activeTab}&view=${viewMode}`)}
-                        className="d-flex align-items-center"
-                      >
-                        <i className="ni ni-settings-gear-65 mr-2"></i>
-                        Edit User
-                      </DropdownItem>
-                      <DropdownItem
-                        onClick={() => handleDeleteUser(user.id, user.name)}
-                        disabled={!getAvatarForUser(user) && !localUsers.find(u => String(u.id) === String(user.id))}
-                        className="d-flex align-items-center text-danger"
-                      >
-                        <i className="fa fa-trash mr-2"></i>
-                        Delete User
-                      </DropdownItem>
-                    </DropdownMenu>
-                  </UncontrolledDropdown>
-                </div>
-                <CardBody className="p-3" style={{ cursor: 'pointer' }} onClick={() => handleUserRowClick(user)}>
-                  <div className="d-flex align-items-center mb-3">
-                    <div
-                      className="avatar avatar-sm rounded-circle bg-gradient-primary mr-3"
-                      style={{
-                        width: 50,
-                        height: 50,
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: getAvatarForUser(user) !== userDefault ? 'transparent' : '#f8f9fa',
-                        border: getAvatarForUser(user) !== userDefault ? undefined : '1px solid #e9ecef'
-                      }}
-                    >
-                      <img 
-                        src={getAvatarForUser(user)} 
-                        alt={user.name} 
-                        style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          objectFit: 'cover',
-                          backgroundColor: getAvatarForUser(user) === userDefault ? '#fff' : 'transparent'
-                        }} 
-                      />
-                    </div>
-                    <div className="flex-grow-1">
-                      <h6 className="mb-0 font-weight-bold">{user.name}</h6>
-                      <small className="text-muted">ID: {user.id}</small>
+              <Card
+                className="shadow-sm position-relative"
+                style={{
+                  cursor: 'pointer',
+                  border: '1.5px solid #e3eaf3',
+                  borderRadius: 12,
+                  background: '#fff',
+                  boxShadow: '0 2px 12px 0 rgba(64,102,181,0.06)',
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.boxShadow = '0 6px 24px 0 rgba(64,102,181,0.13)';
+                  e.currentTarget.style.borderColor = '#b5c6d6';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.boxShadow = '0 2px 12px 0 rgba(64,102,181,0.06)';
+                  e.currentTarget.style.borderColor = '#e3eaf3';
+                }}
+              >
+                <div style={{ padding: '12px 18px 8px 18px', minHeight: 54, display: 'flex', alignItems: 'flex-start', position: 'relative', borderRadius: '12px 12px 0 0', background: '#fff' }}>
+                  <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', flex: 1 }}>
+                    <img
+                      src={getAvatarForUser(user)}
+                      alt={user.name}
+                      className="avatar avatar-sm rounded-circle mr-2"
+                      style={{ width: 32, height: 32, objectFit: 'cover', border: '1px solid #e9ecef', background: '#fff' }}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                      <span className="font-weight-bold" style={{ color: '#22336b', fontSize: '0.81rem', lineHeight: 1.1 }}>{user.name}</span>
+                      <span className="text-muted" style={{ color: '#22336b', fontSize: '0.69rem', marginTop: 2 }}>ID: {user.id}</span>
                     </div>
                   </div>
+                  {/* Three-dot menu */}
+                  <div style={{ position: 'absolute', top: 10, right: 14, zIndex: 2 }} onClick={e => e.stopPropagation()}>
+                    <UncontrolledDropdown>
+                      <DropdownToggle
+                        color="link"
+                        size="sm"
+                        className="text-muted p-0 user-block-menu-toggle"
+                        style={{ border: 'none', background: 'transparent', fontSize: '1.15rem', lineHeight: 1, borderRadius: '50%', transition: 'background 0.15s' }}
+                        aria-label="Actions"
+                      >
+                        <i className="fa fa-ellipsis-h" />
+                      </DropdownToggle>
+                      <DropdownMenu right>
+                        <DropdownItem
+                          onClick={() => navigate(`/admin/edit-user/${user.id}?tab=${activeTab}&view=${viewMode}`)}
+                          className="d-flex align-items-center"
+                        >
+                          <i className="ni ni-settings-gear-65 mr-2"></i>
+                          Edit User
+                        </DropdownItem>
+                        <DropdownItem
+                          onClick={() => handleDeleteUser(user.id, user.name)}
+                          disabled={!getAvatarForUser(user) && !localUsers.find(u => String(u.id) === String(user.id))}
+                          className="d-flex align-items-center text-danger"
+                        >
+                          <i className="fa fa-trash mr-2"></i>
+                          Delete User
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </UncontrolledDropdown>
+                  </div>
+                </div>
+                <CardBody className="p-3" style={{ background: '#fff', borderRadius: '0 0 12px 12px', cursor: 'pointer' }} onClick={() => handleUserRowClick(user)}>
                   <div className="mb-2">
                     <small className="text-muted d-block">
-                      <i className="ni ni-email-83 mr-1"></i>
+                      <i className="ni ni-email-83 mr-1" style={{ color: '#4066B5' }}></i>
                       {user.email}
                     </small>
                     <small className="text-muted d-block">
-                      <i className="ni ni-badge mr-1"></i>
+                      <i className="ni ni-badge mr-1" style={{ color: '#4066B5' }}></i>
                       {user.department || 'N/A'}
                     </small>
                     <small className="text-muted d-block">
-                      <i className="ni ni-calendar-grid-58 mr-1"></i>
+                      <i className="ni ni-calendar-grid-58 mr-1" style={{ color: '#4066B5' }}></i>
                       Last Login: {user.lastLogin}
                     </small>
                   </div>
-                  <div className="d-flex align-items-center">
+                  <div className="d-flex align-items-center mt-2">
                     {getStatusBadge(user.status)}
                   </div>
                 </CardBody>
@@ -1012,10 +1018,10 @@ const UserManagement = () => {
                   </div>
                 </div>
                 <div className="bg-white shadow rounded-lg p-4 mb-3" style={{ border: '1px solid #f0f1f6', boxShadow: '0 2px 16px 0 rgba(44,62,80,.08)' }}>
-                  <div className="mb-3 font-weight-bold" style={{ color: '#222', fontSize: '1.1rem', letterSpacing: '0.01em' }}><i className="ni ni-single-02 mr-2" />Account Info</div>
+                  <div className="mb-3 font-weight-bold" style={{ color: '#222', fontSize: '1.1rem', letterSpacing: '0.01em' }}><i className="ni ni-single-02 mr-2" style={{ color: '#4066B5' }} />Account Info</div>
                   <div className="row account-info-row">
                     <div className="col-12 col-md-6 mb-3">
-                      <span className="text-muted small"><i className="ni ni-email-83 mr-1" />Email</span>
+                      <span className="text-muted small"><i className="ni ni-email-83 mr-1"></i>Email</span>
                       <div className="font-weight-bold account-info-value" id={`email-${selectedUser.id}`}>
                         {selectedUser.email}
                       </div>
@@ -1024,7 +1030,7 @@ const UserManagement = () => {
                       </UncontrolledTooltip>
                     </div>
                     <div className="col-12 col-md-6 mb-3">
-                      <span className="text-muted small"><i className="ni ni-badge mr-1" />{selectedUser.role === 'student' ? 'Course' : 'Department'}</span>
+                      <span className="text-muted small"><i className="ni ni-badge mr-1"></i>{selectedUser.role === 'student' ? 'Course' : 'Department'}</span>
                       <div className="font-weight-bold account-info-value" id={`course-${selectedUser.id}`}>
                         {selectedUser.role === 'student' ? getCourseAbbreviation(selectedUser.department) : (selectedUser.department || 'N/A')}
                       </div>
@@ -1034,7 +1040,7 @@ const UserManagement = () => {
                     </div>
                     {selectedUser.studentNumber && (
                       <div className="col-12 col-md-6 mb-3">
-                        <span className="text-muted small"><i className="ni ni-hat-3 mr-1" />Student Number</span>
+                        <span className="text-muted small"><i className="ni ni-hat-3 mr-1" style={{ color: '#4066B5' }} />Student Number</span>
                         <div className="font-weight-bold account-info-value" id={`student-number-${selectedUser.id}`}>
                           {selectedUser.studentNumber}
                         </div>
@@ -1045,7 +1051,7 @@ const UserManagement = () => {
                     )}
                     {selectedUser.section && (
                       <div className="col-12 col-md-6 mb-3">
-                        <span className="text-muted small"><i className="ni ni-bullet-list-67 mr-1" />Section</span>
+                        <span className="text-muted small"><i className="ni ni-bullet-list-67 mr-1" style={{ color: '#4066B5' }} />Section</span>
                         <div className="font-weight-bold account-info-value" id={`section-${selectedUser.id}`}>
                           {selectedUser.section}
                         </div>
@@ -1056,7 +1062,7 @@ const UserManagement = () => {
                     )}
                     {selectedUser.year && (
                       <div className="col-12 col-md-6 mb-3">
-                        <span className="text-muted small"><i className="ni ni-calendar-grid-58 mr-1" />Year</span>
+                        <span className="text-muted small"><i className="ni ni-calendar-grid-58 mr-1" style={{ color: '#4066B5' }} />Year</span>
                         <div className="font-weight-bold account-info-value" id={`year-${selectedUser.id}`}>
                           {selectedUser.year}
                         </div>
@@ -1066,11 +1072,11 @@ const UserManagement = () => {
                       </div>
                     )}
                     <div className="col-12 col-md-6 mb-3">
-                      <span className="text-muted small"><i className="ni ni-check-bold mr-1" />Status</span>
+                      <span className="text-muted small"><i className="ni ni-check-bold mr-1" style={{ color: '#4066B5' }} />Status</span>
                       <div>{getStatusBadge(selectedUser.status)}</div>
                     </div>
                     <div className="col-12 col-md-6 mb-3">
-                      <span className="text-muted small"><i className="ni ni-calendar-grid-58 mr-1" />Last Login</span>
+                      <span className="text-muted small"><i className="ni ni-calendar-grid-58 mr-1"></i>Last Login</span>
                       <div className="font-weight-bold account-info-value" id={`last-login-${selectedUser.id}`}>
                         {selectedUser.lastLogin}
                       </div>

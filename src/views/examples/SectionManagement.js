@@ -19,7 +19,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   Button,
   Card,
-  CardHeader,
   CardBody,
   Container,
   Row,
@@ -111,8 +110,6 @@ const SectionManagement = () => {
   const [activeCourseTab, setActiveCourseTab] = useState("bsit");
   const [viewMode, setViewMode] = useState("table");
   const [activeYear, setActiveYear] = useState(0);
-  const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   
@@ -126,6 +123,12 @@ const SectionManagement = () => {
   // Student modal state
   const [showStudentsModal, setShowStudentsModal] = useState(false);
   const [studentsModalSection, setStudentsModalSection] = useState(null);
+
+  // Delete modal state
+  const [deleteSectionId, setDeleteSectionId] = useState(null);
+  const [deleteSectionName, setDeleteSectionName] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
 
   const navigate = useNavigate();
 
@@ -175,11 +178,6 @@ const SectionManagement = () => {
       
       // Also add the students to the students array if they don't exist
       if (newSection.studentDetails && newSection.studentDetails.length > 0) {
-        const newStudents = newSection.studentDetails.map((student, index) => ({
-          ...student,
-          sectionId: newSectionId,
-          status: "active"
-        }));
         // Note: In a real app, you'd update the students state here
         // For now, we'll use the studentDetails stored in the section
       }
@@ -192,6 +190,42 @@ const SectionManagement = () => {
       setSearchTerm("");
     }
   }, [mockSections]);
+
+  // Check for updated sections
+  useEffect(() => {
+    const stored = localStorage.getItem('updatedSection');
+    if (stored) {
+      const updatedSection = JSON.parse(stored);
+      
+      // Update the existing section in the sections array
+      setSections(prevSections => 
+        prevSections.map(section => 
+          section.id === updatedSection.id 
+            ? {
+                ...section,
+                name: updatedSection.name,
+                course: updatedSection.course,
+                year: updatedSection.year,
+                adviserId: updatedSection.adviser,
+                adviserDetails: updatedSection.adviserDetails,
+                enrolled: updatedSection.enrolled || updatedSection.students?.length || 0,
+                ay: updatedSection.academicYear || '2024-2025',
+                semester: updatedSection.semester || '1st Semester',
+                studentIds: updatedSection.students || [],
+                studentDetails: updatedSection.studentDetails || [],
+              }
+            : section
+        )
+      );
+      
+      // Clear localStorage
+      localStorage.removeItem('updatedSection');
+      // Switch to the correct tab and reset filters
+      setActiveCourseTab(updatedSection.course);
+      setActiveYear(0);
+      setSearchTerm("");
+    }
+  }, []); // Remove sections dependency to prevent infinite loop
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -404,10 +438,6 @@ const SectionManagement = () => {
       {paginatedSections.map((section, idx) => {
         // Use adviser details from section if available, otherwise fallback to teachers array
         const adviser = section.adviserDetails || teachers.find(t => t.id === section.adviserId);
-        // Calculate if this is the first, middle, or last block in a row (3 per row)
-        const isFirstInRow = idx % 3 === 0;
-        const isMiddleInRow = (idx + 1) % 3 === 2;
-        const isLastInRow = (idx + 1) % 3 === 0 || idx === paginatedSections.length - 1;
         
         return (
           <Col key={section.id} lg="4" md="6" sm="12" className="mb-3">
@@ -416,7 +446,7 @@ const SectionManagement = () => {
               style={{
                 cursor: 'pointer',
                 border: '1.5px solid #e3eaf3',
-                borderRadius: 16,
+                borderRadius: 12,
                 background: '#fff',
                 boxShadow: '0 2px 12px 0 rgba(64,102,181,0.06)',
                 transition: 'box-shadow 0.2s, border-color 0.2s',
@@ -515,13 +545,42 @@ const SectionManagement = () => {
 
   // Add these handlers to fix ESLint errors
   function handleEditSection(section) {
-    // TODO: Implement edit logic
-    console.log('Edit section:', section);
+    // Save the section data to localStorage for editing
+    const sectionToEdit = {
+      ...section,
+      isEditing: true
+    };
+    localStorage.setItem('sectionToEdit', JSON.stringify(sectionToEdit));
+    navigate('/admin/create-section');
   }
 
   function handleDeleteSection(section) {
-    // TODO: Implement delete logic
-    console.log('Delete section:', section);
+    setDeleteSectionId(section.id);
+    setDeleteSectionName(section.name);
+  }
+
+  function cancelDeleteSection() {
+    setDeleteSectionId(null);
+    setDeleteSectionName("");
+  }
+
+  function confirmDeleteSection() {
+    setIsDeleting(true);
+    
+    // Simulate loading time
+    setTimeout(() => {
+      // Remove the section from the sections array
+      setSections(prevSections => prevSections.filter(section => section.id !== deleteSectionId));
+      
+      setIsDeleting(false);
+      setShowDeleteSuccess(true);
+      
+      // Hide success message after 3 seconds and close modal
+      setTimeout(() => {
+        setShowDeleteSuccess(false);
+        cancelDeleteSection();
+      }, 3000);
+    }, 2500);
   }
 
   return (
@@ -703,14 +762,14 @@ const SectionManagement = () => {
                                   color="primary"
                                   size="sm"
                                   className="mr-2"
-                                  // onClick={() => handleEditSection(section.id)}
+                                  onClick={() => handleEditSection(section)}
                                 >
                                   Edit
                                 </Button>
                                 <Button
                                   color="danger"
                                   size="sm"
-                                  // onClick={() => handleDeleteSection(section.id)}
+                                  onClick={() => handleDeleteSection(section)}
                                 >
                                   Delete
                                 </Button>
@@ -814,13 +873,147 @@ const SectionManagement = () => {
                     </div>
                   </>
                 )}
-                {viewMode === 'block' && renderBlockView()}
+                {viewMode === 'block' && (
+                  <>
+                    {renderBlockView()}
+                    <div style={{height: '80px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                      <div className="d-flex flex-row align-items-center" style={{ marginLeft: '1.5rem' }}>
+                        <span className="mr-2 text-muted small">Show</span>
+                        <Input
+                          className="custom-focus-effect"
+                          type="select"
+                          value={itemsPerPage}
+                          onChange={handleItemsPerPageChange}
+                          style={{ width: '80px', fontSize: '0.95rem', marginRight: '8px' }}
+                        >
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                          <option value={50}>50</option>
+                        </Input>
+                        <span className="text-muted small" style={{ whiteSpace: 'nowrap' }}>
+                          of {totalItems} entries
+                        </span>
+                      </div>
+                      <Pagination size="sm" className="mb-0 justify-content-end" style={{margin: 0, marginRight: '1.5rem'}}>
+                        <PaginationItem disabled={currentPage === 1}>
+                          <PaginationLink
+                            previous
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            style={{ cursor: currentPage === 1 ? 'default' : 'pointer' }}
+                          />
+                        </PaginationItem>
+                        {currentPage > 2 && !isMobile && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(1)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              1
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage > 3 && !isMobile && (
+                          <PaginationItem disabled>
+                            <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>...</PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage > 1 && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              {currentPage - 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        <PaginationItem active>
+                          <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>
+                            {currentPage}
+                          </PaginationLink>
+                        </PaginationItem>
+                        {currentPage < totalPages && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              {currentPage + 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage < totalPages - 2 && !isMobile && (
+                          <PaginationItem disabled>
+                            <PaginationLink style={{ textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}>...</PaginationLink>
+                          </PaginationItem>
+                        )}
+                        {currentPage < totalPages - 1 && !isMobile && (
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => handlePageChange(totalPages)}
+                              style={{ cursor: 'pointer', textAlign: 'center', minWidth: '28px', fontSize: '0.875rem' }}
+                            >
+                              {totalPages}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )}
+                        <PaginationItem disabled={currentPage === totalPages}>
+                          <PaginationLink
+                            next
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            style={{ cursor: currentPage === totalPages ? 'default' : 'pointer' }}
+                          />
+                        </PaginationItem>
+                      </Pagination>
+                    </div>
+                  </>
+                )}
               </div>
             </Card>
           </div>
         </Row>
       </Container>
       {renderStudentsModal()}
+      
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={!!deleteSectionId} toggle={cancelDeleteSection} centered backdrop>
+        <ModalBody className="text-center">
+          {!isDeleting && !showDeleteSuccess ? (
+            <>
+              <div className="mb-3">
+                <div className="bg-danger rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '4rem', height: '4rem' }}>
+                  <i className="fa fa-trash text-white" style={{ fontSize: '2rem' }}></i>
+                </div>
+              </div>
+              <h5>Are you sure you want to delete <span className="text-danger">{deleteSectionName}</span>?</h5>
+              <div className="mt-4 d-flex justify-content-center">
+                <Button color="secondary" onClick={cancelDeleteSection} className="mr-2">Cancel</Button>
+                <Button color="danger" onClick={confirmDeleteSection}>Delete</Button>
+              </div>
+            </>
+          ) : isDeleting ? (
+            <>
+              <div className="mb-3">
+                <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+                  <span className="sr-only">Loading...</span>
+                </div>
+              </div>
+              <h5>Deleting Section...</h5>
+              <p className="text-muted mb-0">Please wait while we process your request.</p>
+            </>
+          ) : (
+            <>
+              <div className="mb-3">
+                <div className="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '4rem', height: '4rem' }}>
+                  <i className="ni ni-check-bold text-white" style={{ fontSize: '2rem' }}></i>
+                </div>
+              </div>
+              <h5>Section <span className="text-success">{deleteSectionName}</span> has been deleted successfully!</h5>
+            </>
+          )}
+        </ModalBody>
+      </Modal>
     </>
   );
 };

@@ -30,6 +30,10 @@ import CreateUser from "views/examples/CreateUser.js";
 import EditUser from "views/examples/EditUser.js";
 import SectionManagement from "views/examples/SectionManagement.js";
 import CreateSection from "views/examples/CreateSection.js";
+import ReportsAndLogs from "views/examples/ReportsAndLogs.js";
+import AttendanceLog from "views/examples/AttendanceLog.js";
+import GradesLog from "views/examples/GradesLog.js";
+import AuditLog from "views/examples/AuditLog.js";
 
 var routes = [
   {
@@ -52,6 +56,37 @@ var routes = [
     icon: "ni ni-books text-green",
     component: <SectionManagement />,
     layout: "/admin",
+  },
+  {
+    path: "/reports-and-logs",
+    name: "Reports & Logs",
+    icon: "ni ni-chart-bar-32 text-purple",
+    component: <ReportsAndLogs />,
+    layout: "/admin"
+  },
+  {
+    path: "/reports-and-logs/attendance",
+    name: "Attendance Log",
+    icon: "ni ni-calendar-grid-58 text-orange",
+    component: <AttendanceLog />,
+    layout: "/admin",
+    hidden: true,
+  },
+  {
+    path: "/reports-and-logs/grades",
+    name: "Grades Log",
+    icon: "ni ni-hat-3 text-purple",
+    component: <GradesLog />,
+    layout: "/admin",
+    hidden: true,
+  },
+  {
+    path: "/reports-and-logs/audit",
+    name: "Audit Log",
+    icon: "ni ni-archive-2 text-gray",
+    component: <AuditLog />,
+    layout: "/admin",
+    hidden: true,
   },
   {
     path: "/maps",
@@ -122,6 +157,7 @@ var routes = [
     icon: "ni ni-fat-add text-primary",
     component: <CreateUser />,
     layout: "/admin",
+    hidden: true,
   },
   {
     path: "/edit-user/:id",
@@ -129,6 +165,7 @@ var routes = [
     icon: "ni ni-single-02 text-primary",
     component: <EditUser />,
     layout: "/admin",
+    hidden: true,
   },
   {
     path: "/create-section",
@@ -136,6 +173,7 @@ var routes = [
     icon: "ni ni-fat-add text-primary",
     component: <CreateSection />,
     layout: "/admin",
+    hidden: true,
   },
 ];
 export default routes;

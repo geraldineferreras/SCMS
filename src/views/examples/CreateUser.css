@@ -291,4 +291,12 @@ input.form-control-alternative:focus {
   border: 1.5px solid #8ecaff !important;
   box-shadow: 0 0 10px 3px rgba(142, 202, 255, 0.28) !important;
   background-color: #fff !important;
+}
+
+/* Custom blue hover/focus for date input */
+input[type="date"]:hover,
+input[type="date"]:focus {
+  border-color: #2476ff !important;
+  box-shadow: 0 0 0 2px #e7f3ff !important;
+  outline: none !important;
 } 
