@@ -29,6 +29,9 @@ import {
 } from "reactstrap";
 import Header from "components/Headers/Header.js";
 import classnames from "classnames";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import "./AuditLogDatePicker.css";
 
 const AuditLog = () => {
   const [auditData, setAuditData] = useState([]);
@@ -37,7 +40,8 @@ const AuditLog = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedModule, setSelectedModule] = useState("");
-  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [dateFrom, setDateFrom] = useState(null);
+  const [dateTo, setDateTo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortKey, setSortKey] = useState("");
@@ -156,7 +160,7 @@ const AuditLog = () => {
 
   useEffect(() => {
     filterData();
-  }, [searchTerm, selectedModule, dateRange, auditData]);
+  }, [searchTerm, selectedModule, dateFrom, dateTo, auditData]);
 
   const filterData = () => {
     let filtered = auditData;
@@ -178,16 +182,10 @@ const AuditLog = () => {
     }
 
     // Date range filter
-    if (dateRange.start) {
+    if (dateFrom && dateTo) {
       filtered = filtered.filter((item) => {
         const itemDate = item.timestamp.split(" ")[0];
-        return itemDate >= dateRange.start;
-      });
-    }
-    if (dateRange.end) {
-      filtered = filtered.filter((item) => {
-        const itemDate = item.timestamp.split(" ")[0];
-        return itemDate <= dateRange.end;
+        return itemDate >= dateFrom.toISOString().split("T")[0] && itemDate <= dateTo.toISOString().split("T")[0];
       });
     }
 
@@ -396,22 +394,33 @@ const AuditLog = () => {
                   <Col md={4}>
                     <FormGroup>
                       <Label style={{ fontWeight: 600, color: '#32325d', marginBottom: '0.5rem' }}>Date From</Label>
-                      <Input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                        style={{ borderRadius: '6px', border: '1px solid #e1e5e9' }}
+                      <DatePicker
+                        selected={dateFrom}
+                        onChange={date => setDateFrom(date)}
+                        selectsStart
+                        startDate={dateFrom}
+                        endDate={dateTo}
+                        placeholderText="Select date"
+                        className="form-control"
+                        wrapperClassName="w-100"
+                        style={{ borderRadius: '6px', border: '1px solid #e1e5e9', height: '48px', fontSize: '1rem', padding: '0 16px' }}
                       />
                     </FormGroup>
                   </Col>
                   <Col md={4}>
                     <FormGroup>
                       <Label style={{ fontWeight: 600, color: '#32325d', marginBottom: '0.5rem' }}>Date To</Label>
-                      <Input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                        style={{ borderRadius: '6px', border: '1px solid #e1e5e9' }}
+                      <DatePicker
+                        selected={dateTo}
+                        onChange={date => setDateTo(date)}
+                        selectsEnd
+                        startDate={dateFrom}
+                        endDate={dateTo}
+                        minDate={dateFrom}
+                        placeholderText="Select date"
+                        className="form-control"
+                        wrapperClassName="w-100"
+                        style={{ borderRadius: '6px', border: '1px solid #e1e5e9', height: '48px', fontSize: '1rem', padding: '0 16px' }}
                       />
                     </FormGroup>
                   </Col>
@@ -421,14 +430,16 @@ const AuditLog = () => {
                     <Button
                       color="secondary"
                       outline
+                      size="sm"
                       onClick={() => {
                         setSearchTerm("");
                         setSelectedModule("");
-                        setDateRange({ start: "", end: "" });
+                        setDateFrom(null);
+                        setDateTo(null);
                       }}
-                      style={{ borderRadius: '6px', fontWeight: 600 }}
+                      style={{ borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}
                     >
-                      <i className="ni ni-refresh mr-2" />
+                      <i className="ni ni-refresh mr-1" />
                       Clear Filters
                     </Button>
                   </Col>
